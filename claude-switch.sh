@@ -29,10 +29,11 @@ __cms_dir="$(cd "$(dirname "$__cms_src")" && pwd)"
 [ -f "$__cms_dir/claude-switch.local.sh" ] && . "$__cms_dir/claude-switch.local.sh"
 unset __cms_src
 
-# 切回官方登录态：清掉所有 Kimi 环境变量
+# 切回官方登录态：清掉所有 Kimi 环境变量 + 旧的 API key（避免冲突）
 _use_claude() {
     unset ANTHROPIC_BASE_URL ANTHROPIC_AUTH_TOKEN ANTHROPIC_MODEL \
-          ANTHROPIC_DEFAULT_OPUS_MODEL ANTHROPIC_DEFAULT_SONNET_MODEL
+          ANTHROPIC_DEFAULT_OPUS_MODEL ANTHROPIC_DEFAULT_SONNET_MODEL \
+          ANTHROPIC_API_KEY
 }
 
 # 切到 Kimi 套餐（仅当前 shell）
@@ -41,12 +42,17 @@ _use_kimi() {
         echo "[claude-switch] 未配置 Kimi key。请在 claude-switch.local.sh 里设置 KIMI_KEY。" >&2
         return 1
     fi
+    # 先清掉旧的 API key，避免和 AUTH_TOKEN 冲突
+    unset ANTHROPIC_API_KEY
     export ANTHROPIC_BASE_URL="$KIMI_BASE_URL"
     export ANTHROPIC_AUTH_TOKEN="$KIMI_KEY"
     export ANTHROPIC_MODEL="$KIMI_MODEL"
     export ANTHROPIC_DEFAULT_OPUS_MODEL="$KIMI_MODEL"
     export ANTHROPIC_DEFAULT_SONNET_MODEL="$KIMI_MODEL"
 }
+
+# 先解除可能存在的同名 alias，避免函数定义语法冲突
+unalias cc cccc ccclaude cckm cckimi 2>/dev/null || true
 
 # 官方 + 允许所有操作
 cc()   { _use_claude; claude --dangerously-skip-permissions "$@"; }
