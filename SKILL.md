@@ -31,9 +31,11 @@ Claude Code 用哪套额度取决于三个环境变量：`ANTHROPIC_BASE_URL`、
    - bash: `cp claude-switch.local.sh.example claude-switch.local.sh` 后填入 Kimi key
    - PowerShell: `Copy-Item claude-switch.local.ps1.example claude-switch.local.ps1` 后填入 Kimi key
 3. 注入终端配置：
-   - bash / WSL: `bash install.sh`（zsh 用 `RC=~/.zshrc bash install.sh`）
+   - bash / zsh / WSL: `bash install.sh`（自动识别 macOS→`~/.zshrc`、Linux/Git Bash→`~/.bashrc`；可用 `RC=...` 手动指定）
    - PowerShell: `powershell -ExecutionPolicy Bypass -File install.ps1`
-4. 重开终端，或 `source ~/.bashrc` / `. $PROFILE`。
+4. 重开终端，或 `source ~/.zshrc`(Mac) / `source ~/.bashrc` / `. $PROFILE`。
+
+支持的终端：Windows PowerShell 5.1 / PowerShell 7 / Git Bash / WSL，macOS/Linux 的 bash 与 zsh。
 
 ## Kimi 套餐接入参数
 

@@ -41,11 +41,11 @@ cp claude-switch.local.sh.example  claude-switch.local.sh   # 填入 KIMI_KEY
 #   Copy-Item claude-switch.local.ps1.example claude-switch.local.ps1   # 填入 $KimiKey
 
 # 3. 注入终端配置
-bash install.sh                                              # Git Bash / WSL / Linux / macOS
-#   zsh:  RC=~/.zshrc bash install.sh
-powershell -ExecutionPolicy Bypass -File install.ps1         # PowerShell 5.1 + 7
+bash install.sh                                              # 自动识别：macOS→~/.zshrc，Linux/Git Bash→~/.bashrc
+#   手动指定 rc：  RC=~/.bashrc bash install.sh
+powershell -ExecutionPolicy Bypass -File install.ps1         # Windows PowerShell 5.1 + 7
 
-# 4. 重开终端，或 source ~/.bashrc / . $PROFILE
+# 4. 重开终端，或 source ~/.zshrc(Mac) / source ~/.bashrc / . $PROFILE
 ```
 
 ## Kimi 套餐接入参数
@@ -66,7 +66,11 @@ powershell -ExecutionPolicy Bypass -File install.ps1         # PowerShell 5.1 + 
 ## 已知坑
 
 - **PowerShell 5.1 乱码**：PS 5.1 默认按 GBK 读脚本，含中文的 `.ps1` 必须存为 **UTF-8 BOM**，否则注释里的中文会破坏字符串解析。本仓库的 `.ps1` 已带 BOM。
-- **代理**：国内走 Kimi 端点，建议在系统 `NO_PROXY` 里加 `.moonshot.cn`，让它直连不走代理。
+- **代理**：国内走 Kimi 端点（`api.kimi.com`），若开了全局代理，建议在 `NO_PROXY`/`no_proxy` 里加 `.kimi.com`，让它直连不走代理，否则 `cckm` 可能卡在 retry。
+- **端点用错会一直 401**：症状是 Claude Code 卡在 `Retrying... attempt N/10`。先 `curl` 直打 `https://api.kimi.com/coding/v1/messages` 验证 key 是否返回 200，再排查别的。
+- **跨平台 shell**：
+  - macOS 默认 **zsh**，`install.sh` 会自动注入 `~/.zshrc`；脚本对 zsh/bash 定位自身目录的差异已做兼容。
+  - Windows 三种环境（PowerShell 5.1 / 7 / Git Bash）+ WSL 都已覆盖。
 
 ---
 

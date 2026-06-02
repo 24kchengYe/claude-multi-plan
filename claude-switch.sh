@@ -17,8 +17,17 @@ KIMI_MODEL="kimi-k2.6"
 KIMI_KEY=""   # 由 claude-switch.local.sh 覆盖
 
 # 读取本地私密配置（含 key），存在才加载
-__cms_dir="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
+# 兼容 bash（BASH_SOURCE）与 zsh（%x），定位本脚本所在目录
+if [ -n "${BASH_SOURCE:-}" ]; then
+    __cms_src="${BASH_SOURCE[0]}"
+elif [ -n "${ZSH_VERSION:-}" ]; then
+    __cms_src="${(%):-%x}"
+else
+    __cms_src="$0"
+fi
+__cms_dir="$(cd "$(dirname "$__cms_src")" && pwd)"
 [ -f "$__cms_dir/claude-switch.local.sh" ] && . "$__cms_dir/claude-switch.local.sh"
+unset __cms_src
 
 # 切回官方登录态：清掉所有 Kimi 环境变量
 _use_claude() {
