@@ -1,0 +1,3 @@
+# 复制本文件为 claude-switch.local.sh，填入你自己的 Kimi Code key。
+# claude-switch.local.sh 已被 .gitignore 排除，不会上传。
+KIMI_KEY="sk-kimi-在这里填你的KimiCodeKey"
