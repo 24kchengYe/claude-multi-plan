@@ -1,8 +1,9 @@
 {
-  "_comment": "复制到 ~/.claude-code-router/config.json，供 ccta 使用。api_key 用 $TRAE_CN_JWT 环境变量插值（ccta 启动时从 ~/.trae-cn/trae-jwt-token 注入），不要把真实 JWT 写进来。",
+  "_comment": "复制到 ~/.claude-code-router/config.json，供 ccta 使用。api_key 用 $TRAE_CN_JWT 环境变量插值（ccta 启动时从 ~/.trae-cn/trae-jwt-token 注入），不要把真实 JWT 写进来。CUSTOM_ROUTER_PATH 改成你机器上的绝对路径（同目录的 claude-code-router.custom-router.js 拷过去）。",
   "LOG": false,
   "HOST": "127.0.0.1",
   "PORT": 3456,
+  "CUSTOM_ROUTER_PATH": "/Users/<你的用户名>/.claude-code-router/custom-router.js",
   "Providers": [
     {
       "name": "trae-cn",

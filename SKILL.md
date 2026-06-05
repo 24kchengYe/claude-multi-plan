@@ -32,11 +32,23 @@ description: 在任意终端（PowerShell/Git Bash/WSL）用快捷命令在 Clau
 - **`ccta` 做的事**：读 `~/.trae-cn/trae-jwt-token` → `export TRAE_CN_JWT` → `ccr restart`（用最新 JWT）→ `eval "$(ccr activate)"`（导出 `ANTHROPIC_BASE_URL=http://127.0.0.1:3456` + token）→ `claude --dangerously-skip-permissions`。带安全护栏：若 `ANTHROPIC_BASE_URL` 没指向 CCR 就中止，避免误用真 Anthropic 计费。
   - ⚠️ **不要用 `ccr code` 启动**：v2 的 `ccr code` 不会把 `ANTHROPIC_BASE_URL` 注入到 claude 子进程，结果 cc 会拿现有 key 直连 `api.anthropic.com`（真计费）。必须 `eval "$(ccr activate)"` 后再起 `claude`。
   - 验证是否真走内部：`config.json` 设 `"LOG": true`，跑一次后 `grep lcd.bytedance ~/.claude-code-router/logs/*.log` 应有命中、`grep api.anthropic` 应为 0。
-- **默认模型** `openrouter-2o`，进 cc 后可用 `/model trae-cn,gpt-5.4` 之类切换。
+#### 模型档位映射（custom-router）
+
+cc 的 `/model` 菜单只有 Opus/Sonnet/Haiku，**它显示什么不代表真实后端**。用 CCR 的 `CUSTOM_ROUTER_PATH`（`~/.claude-code-router/custom-router.js`）按 cc 发来的模型名把三档映射到内部模型：
+
+| cc 选 | 实际后端（Trae CN） |
+|------|------|
+| Opus（默认） | `openrouter-2o` |
+| Sonnet | `openrouter-1o` |
+| Haiku | `openrouter-1` |
+
+- **怎么知道当前用的哪个**：发请求的**响应里 `model` 字段**就是真实后端（如 `"model":"openrouter-2o"`）；或 `"LOG": true` 后看日志的出站 `model`。
+- **怎么切**：直接在 cc 里用 `/model` 选 Opus/Sonnet/Haiku，即对应 2o/1o/1。想用其它模型（gpt-5.4 等）：`/model trae-cn,gpt-5.4`，或改 `custom-router.js` / `Router.default` 后 `ccr restart`。
+- cc 的后台小任务（标题生成等）默认走 haiku → 自动落到最便宜的 `openrouter-1`。
 
 前置：
 1. 装 CCR：`npm install -g @musistudio/claude-code-router`（已装在 `~/.local/bin/node/bin/ccr`）。
-2. 配置：`~/.claude-code-router/config.json`（Provider 指向 `lcd.bytedance.net/litellm_trae/v1/chat/completions`，`api_key` 用 `$TRAE_CN_JWT` 插值，Router.default = `trae-cn,openrouter-2o`）。
+2. 配置：`~/.claude-code-router/config.json`（Provider 指向 `lcd.bytedance.net/litellm_trae/v1/chat/completions`，`api_key` 用 `$TRAE_CN_JWT` 插值，Router.default = `trae-cn,openrouter-2o`，`CUSTOM_ROUTER_PATH` 指向 `custom-router.js`）。仓库附 `claude-code-router.config.example.json` 与 `claude-code-router.custom-router.js`。
 3. traecli 已登录（保证 `~/.trae-cn/trae-jwt-token` 是新的）。
 
 > ⚠️ JWT 约 24h 过期，`ccta` 每次启动会用最新 token 重启 CCR；若 cc 里报 401，重新跑一次 `ccta` 即可。
