@@ -29,7 +29,9 @@ description: 在任意终端（PowerShell/Git Bash/WSL）用快捷命令在 Clau
 
 - **难点**：cc 说 Anthropic 协议（`/v1/messages`），而 Trae CN 网关（`lcd.bytedance.net/litellm_trae`）只开了 OpenAI 协议（`/v1/chat/completions`，`/v1/messages` 返回 404）。所以**纯 ccswitch 换环境变量不行**，必须有本地协议桥。
 - **桥**：[claude-code-router](https://github.com/musistudio/claude-code-router)（CCR）。它在本地 `127.0.0.1:3456` 暴露 Anthropic 端点，把 `/v1/messages` 翻译成 OpenAI `/v1/chat/completions` 转发给 Trae CN 网关，并注入 trae JWT。
-- **`ccta` 做的事**：读 `~/.trae-cn/trae-jwt-token` → `export TRAE_CN_JWT` → `ccr restart`（用最新 JWT）→ `ccr code --dangerously-skip-permissions`（启动 cc，base_url 自动指向 CCR）。
+- **`ccta` 做的事**：读 `~/.trae-cn/trae-jwt-token` → `export TRAE_CN_JWT` → `ccr restart`（用最新 JWT）→ `eval "$(ccr activate)"`（导出 `ANTHROPIC_BASE_URL=http://127.0.0.1:3456` + token）→ `claude --dangerously-skip-permissions`。带安全护栏：若 `ANTHROPIC_BASE_URL` 没指向 CCR 就中止，避免误用真 Anthropic 计费。
+  - ⚠️ **不要用 `ccr code` 启动**：v2 的 `ccr code` 不会把 `ANTHROPIC_BASE_URL` 注入到 claude 子进程，结果 cc 会拿现有 key 直连 `api.anthropic.com`（真计费）。必须 `eval "$(ccr activate)"` 后再起 `claude`。
+  - 验证是否真走内部：`config.json` 设 `"LOG": true`，跑一次后 `grep lcd.bytedance ~/.claude-code-router/logs/*.log` 应有命中、`grep api.anthropic` 应为 0。
 - **默认模型** `openrouter-2o`，进 cc 后可用 `/model trae-cn,gpt-5.4` 之类切换。
 
 前置：

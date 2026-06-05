@@ -96,5 +96,11 @@ ccta() {
     _use_claude                          # 清掉 cckm 等残留的 ANTHROPIC_* 变量，避免串味
     export TRAE_CN_JWT="$jwt"            # CCR 配置里 api_key=$TRAE_CN_JWT，启动时注入最新 JWT（约 24h 过期）
     command ccr restart >/dev/null 2>&1  # 用最新 JWT 重启 CCR
-    command ccr code --dangerously-skip-permissions "$@"
+    eval "$(command ccr activate)"       # 关键：导出 ANTHROPIC_BASE_URL=127.0.0.1:3456 + token，让 cc 走 CCR
+    # 安全护栏：若环境没指向 CCR，立即中止，避免误用真 Anthropic 计费
+    if [ "$ANTHROPIC_BASE_URL" != "http://127.0.0.1:3456" ]; then
+        echo "[ccta] ANTHROPIC_BASE_URL 未指向本地 CCR（实际：${ANTHROPIC_BASE_URL:-空}）。已中止以防误用真 Anthropic 计费。" >&2
+        return 1
+    fi
+    command claude --dangerously-skip-permissions "$@"
 }
