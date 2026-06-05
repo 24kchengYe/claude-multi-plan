@@ -12,6 +12,11 @@
 | `ccclaude` | 官方登录 | 普通确认 |
 | `cckm` | Kimi 套餐 | 允许所有操作 |
 | `cckimi` | Kimi 套餐 | 普通确认 |
+| `ta` | TRAE CLI（字节内部） | 允许所有操作（`--permission-mode bypass_permissions`） |
+| `trae` | TRAE CLI（字节内部） | 普通模式 |
+| `ccta` | Claude Code × TRAE 内部模型 | 允许所有操作；cc 跑在内部模型上（经 claude-code-router 反代） |
+
+> `cc` / `cckm` 在**任何电脑**可用。`ta` / `trae` / `ccta` 是字节内部能力，需**内网 + 认证 ByteDance**，见下方专节。
 
 ## 原理
 
@@ -47,6 +52,45 @@ powershell -ExecutionPolicy Bypass -File install.ps1         # Windows PowerShel
 
 # 4. 重开终端，或 source ~/.zshrc(Mac) / source ~/.bashrc / . $PROFILE
 ```
+
+## TRAE CLI / `ccta`（字节内部，需内网 + 认证 ByteDance）
+
+`ta` / `trae` / `ccta` 依赖字节内部服务，**两个前提缺一不可**：
+
+1. **在字节内网或挂 VPN**：依赖内部域名（安装源 `*.byted.org`、模型网关 `lcd.bytedance.net`），纯外网连不上。
+2. **认证 ByteDance**：即 `traecli` 登录，会生成 `~/.trae-cn/trae-jwt-token`；`ccta` 靠这个 JWT 调内部模型。
+
+| 命令 | 任何电脑 | 需字节内网 | 需认证 ByteDance |
+|------|:---:|:---:|:---:|
+| `cc` / `ccclaude` / `cckm` / `cckimi` | ✅ | 否 | 否 |
+| `ta` / `trae` | 仅字节环境 | 是 | 是 |
+| `ccta` | 仅字节环境 | 是 | 是 |
+
+**`ccta` 是怎么回事**：想用 Claude Code 的壳（TUI/skills/MCP），但模型走 TRAE CN 内部网关（免费，无需 Anthropic key）。难点是 cc 说 Anthropic 协议、网关只开 OpenAI 协议（`/v1/messages` 返回 404），所以**纯换环境变量不行**，要靠 [claude-code-router](https://github.com/musistudio/claude-code-router) 在本地 `127.0.0.1:3456` 做协议翻译。`ccta` = 刷新 JWT → `ccr restart` → `ccr code --dangerously-skip-permissions`。
+
+新机器配置（字节内网/VPN 可达时）：
+
+```bash
+# 1. clone + 注入（同上方"安装"）
+git clone https://github.com/24kchengYe/claude-multi-plan.git ~/.claude/skills/claude-multi-plan
+bash ~/.claude/skills/claude-multi-plan/install.sh
+
+# 2. 装 TRAE CLI 并登录（= 认证 ByteDance，生成 ~/.trae-cn/trae-jwt-token）
+curl -fsSL https://tosv-myabc.byted.org/obj/trae-common-2-asiasebd/traex/install/install_all_platforms.sh \
+  | TRAEX_INSTALL_CHANNEL=alpha TRAEX_INSTALL_ASSUME_YES=1 sh
+traecli            # git 身份回车确认；或 traecli login --sso
+
+# 3. ccta 用：装 claude-code-router + 放配置（仓库里的 example 无密钥，用 $TRAE_CN_JWT 插值）
+npm install -g @musistudio/claude-code-router
+mkdir -p ~/.claude-code-router
+cp ~/.claude/skills/claude-multi-plan/claude-code-router.config.example.json ~/.claude-code-router/config.json
+
+# 4. 重开终端 → ta / trae / ccta 可用
+```
+
+> ⚠️ **别手动拷 `~/.trae-cn/trae-jwt-token`**：约 24h 过期、按用户/机器签发，每台新机器重新 `traecli` 登录即可。
+> 纯私人电脑、连不上内网/VPN → `ta`/`trae`/`ccta` 用不了，那台机器上只有 `cc`/`cckm` 能用。
+> 进 cc 后默认模型 `openrouter-2o`，可 `/model trae-cn,gpt-5.4` 切换；用量在内部网关侧看（cc 自带订阅监控看不到）。
 
 ## Kimi 套餐接入参数
 

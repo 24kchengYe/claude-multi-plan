@@ -61,6 +61,45 @@ Claude Code 用哪套额度取决于三个环境变量：`ANTHROPIC_BASE_URL`、
 
 支持的终端：Windows PowerShell 5.1 / PowerShell 7 / Git Bash / WSL，macOS/Linux 的 bash 与 zsh。
 
+> 上面这套让 `cc` / `cckm` 在**任何电脑**可用（只需 Claude 账号 / Kimi key，不依赖字节）。
+> `ta` / `trae` / `ccta` 还需额外条件，见下节。
+
+## 换新电脑跑 `ta` / `trae` / `ccta`（需字节内网 + 认证 ByteDance）
+
+这三个命令**必须满足两个前提**，否则用不了：
+1. **在字节内网或挂 VPN** —— 依赖内部域名（安装源 `*.byted.org`、模型网关 `lcd.bytedance.net`），纯外网连不上。
+2. **认证 ByteDance** —— 即 `traecli` 登录，会生成 `~/.trae-cn/trae-jwt-token`；`ccta` 靠这个 JWT 调内部模型。
+
+| 命令 | 任何电脑 | 需字节内网 | 需认证 ByteDance |
+|------|:---:|:---:|:---:|
+| `cc` / `ccclaude` / `cckm` / `cckimi` | ✅ | 否 | 否 |
+| `ta` / `trae` | 仅字节环境 | 是 | 是 |
+| `ccta` | 仅字节环境 | 是 | 是 |
+
+新机器步骤（字节内网/VPN 可达时）：
+
+```bash
+# 1. 复用本仓库
+git clone git@github.com:24kchengYe/claude-multi-plan.git ~/.claude/skills/claude-multi-plan
+bash ~/.claude/skills/claude-multi-plan/install.sh
+
+# 2. 装 TRAE CLI 并登录（= 认证 ByteDance，生成 ~/.trae-cn/trae-jwt-token）
+curl -fsSL https://tosv-myabc.byted.org/obj/trae-common-2-asiasebd/traex/install/install_all_platforms.sh \
+  | TRAEX_INSTALL_CHANNEL=alpha TRAEX_INSTALL_ASSUME_YES=1 sh
+traecli            # git 身份回车确认；或 traecli login --sso
+
+# 3. ccta 用：装 claude-code-router + 放配置
+npm install -g @musistudio/claude-code-router
+mkdir -p ~/.claude-code-router
+cp ~/.claude/skills/claude-multi-plan/claude-code-router.config.example.json ~/.claude-code-router/config.json
+
+# 4. 重开终端 → ta / trae / ccta 可用
+```
+
+> ⚠️ **不要手动拷贝 `~/.trae-cn/trae-jwt-token`**：它约 24h 过期、且按用户/机器签发。每台新机器重新 `traecli` 登录即可。
+> 仓库里无密钥（`claude-code-router.config.example.json` 用 `$TRAE_CN_JWT` 插值，JWT 由 `ccta` 运行时本地注入），可放心 clone 到任何机器。
+> 纯私人电脑、连不上内网/VPN → `ta`/`trae`/`ccta` 都用不了，那台机器上只有 `cc`/`cckm` 能用。
+
 ## Kimi 套餐接入参数
 
 - Base URL：`https://api.kimi.com/coding`（Kimi Code **订阅套餐**专属端点）
