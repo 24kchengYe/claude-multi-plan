@@ -1,0 +1,31 @@
+{
+  "_comment": "复制到 ~/.claude-code-router/config.json，供 ccta 使用。api_key 用 $TRAE_CN_JWT 环境变量插值（ccta 启动时从 ~/.trae-cn/trae-jwt-token 注入），不要把真实 JWT 写进来。",
+  "LOG": false,
+  "HOST": "127.0.0.1",
+  "PORT": 3456,
+  "Providers": [
+    {
+      "name": "trae-cn",
+      "api_base_url": "https://lcd.bytedance.net/litellm_trae/v1/chat/completions",
+      "api_key": "$TRAE_CN_JWT",
+      "models": [
+        "openrouter-2o",
+        "openrouter-1o",
+        "openrouter-1",
+        "gpt-5.4",
+        "gpt-5.5",
+        "deepseek-v4-pro",
+        "deepseek-v4-flash",
+        "glm-5",
+        "glm-5.1",
+        "kimi-k2.6",
+        "kimi-k2.5",
+        "minimax-m2.7",
+        "qwen-3.5"
+      ]
+    }
+  ],
+  "Router": {
+    "default": "trae-cn,openrouter-2o"
+  }
+}

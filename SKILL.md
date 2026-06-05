@@ -17,10 +17,28 @@ description: 在任意终端（PowerShell/Git Bash/WSL）用快捷命令在 Clau
 | `cckimi` | Kimi 套餐 | 普通确认 |
 | `ta` | TRAE CLI | 允许所有操作（--permission-mode bypass_permissions） |
 | `trae` | TRAE CLI | 普通模式（默认 Agent 模式，按需审批） |
+| `ccta` | Claude Code × TRAE 内部模型 | 允许所有操作；cc 跑在 traecli 的内部模型上（经 CCR 反代） |
 
 > `ta` / `trae` 是字节内部 **TRAE CLI**（`traecli`/`traex`，基于 codex 二开）的启动快捷命令，仅 mac/linux。
 > 前置：已 `curl ... install_all_platforms.sh | sh` 装好并 `traecli` 登录。
 > `ta` 用官方 `bypass_permissions` 预设（可编辑工作区外文件 + 联网 + 不审批），而非文档不推荐的 `-y`（完全关沙箱）。
+
+### `ccta`：让 Claude Code 跑在 traecli 的内部模型上
+
+想用 **Claude Code 这个壳**（TUI / skills / MCP / slash command），但模型走 **TRAE CN 内部网关**（`openrouter-2o` 等，免费、无需 Anthropic key）。
+
+- **难点**：cc 说 Anthropic 协议（`/v1/messages`），而 Trae CN 网关（`lcd.bytedance.net/litellm_trae`）只开了 OpenAI 协议（`/v1/chat/completions`，`/v1/messages` 返回 404）。所以**纯 ccswitch 换环境变量不行**，必须有本地协议桥。
+- **桥**：[claude-code-router](https://github.com/musistudio/claude-code-router)（CCR）。它在本地 `127.0.0.1:3456` 暴露 Anthropic 端点，把 `/v1/messages` 翻译成 OpenAI `/v1/chat/completions` 转发给 Trae CN 网关，并注入 trae JWT。
+- **`ccta` 做的事**：读 `~/.trae-cn/trae-jwt-token` → `export TRAE_CN_JWT` → `ccr restart`（用最新 JWT）→ `ccr code --dangerously-skip-permissions`（启动 cc，base_url 自动指向 CCR）。
+- **默认模型** `openrouter-2o`，进 cc 后可用 `/model trae-cn,gpt-5.4` 之类切换。
+
+前置：
+1. 装 CCR：`npm install -g @musistudio/claude-code-router`（已装在 `~/.local/bin/node/bin/ccr`）。
+2. 配置：`~/.claude-code-router/config.json`（Provider 指向 `lcd.bytedance.net/litellm_trae/v1/chat/completions`，`api_key` 用 `$TRAE_CN_JWT` 插值，Router.default = `trae-cn,openrouter-2o`）。
+3. traecli 已登录（保证 `~/.trae-cn/trae-jwt-token` 是新的）。
+
+> ⚠️ JWT 约 24h 过期，`ccta` 每次启动会用最新 token 重启 CCR；若 cc 里报 401，重新跑一次 `ccta` 即可。
+> 用量看哪里：cc 自带的订阅用量监控**看不到**这条（它走的是内部网关）；用量在 TRAE CN / 网关侧的内部看板。
 
 ## 原理
 

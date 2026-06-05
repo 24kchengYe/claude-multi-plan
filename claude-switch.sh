@@ -67,14 +67,34 @@ cckm() { _use_kimi && claude --dangerously-skip-permissions "$@"; }
 cckimi() { _use_kimi && claude "$@"; }
 
 # ---- TRAE CLI 启动模式（traecli/traex，仅 mac/linux）----
-# traex/traecli 默认装在 ~/.local/bin，确保它在 PATH 上
-case ":$PATH:" in
-    *":$HOME/.local/bin:"*) ;;
-    *) export PATH="$HOME/.local/bin:$PATH" ;;
-esac
+# traex/traecli 装在 ~/.local/bin，ccr/node 装在 ~/.local/bin/node/bin，确保都在 PATH 上
+for __d in "$HOME/.local/bin" "$HOME/.local/bin/node/bin"; do
+    case ":$PATH:" in
+        *":$__d:"*) ;;
+        *) [ -d "$__d" ] && export PATH="$__d:$PATH" ;;
+    esac
+done
+unset __d
 unalias ta trae 2>/dev/null || true
 # 允许所有操作：官方 bypass_permissions 预设（可编辑工作区外文件 + 联网 + 不审批），
 # 不用文档不推荐的 -y/--dangerously-bypass-approvals-and-sandbox（那个会完全关沙箱、永不审批）。
 ta()   { command traecli --permission-mode bypass_permissions "$@"; }
 # 普通模式：默认 Agent 模式，危险操作仍会请求审批
 trae() { command traecli "$@"; }
+
+# ---- ccta：Claude Code 跑在 traecli 的内部模型上（经 claude-code-router 反代）----
+# cc 说 Anthropic 协议，Trae CN 网关只开 OpenAI 协议，靠本地 CCR 把 /v1/messages 翻译成 /v1/chat/completions。
+# 一键：刷新 trae JWT → 拉起 CCR → 启动 Claude Code + 允许所有操作；默认模型 openrouter-2o（cc 内可 /model 切换）。
+unalias ccta 2>/dev/null || true
+ccta() {
+    local jwt
+    jwt="$(tr -d '\n' < "$HOME/.trae-cn/trae-jwt-token" 2>/dev/null)"
+    if [ -z "$jwt" ]; then
+        echo "[ccta] 未找到 ~/.trae-cn/trae-jwt-token，请先用 traecli 登录后再试。" >&2
+        return 1
+    fi
+    _use_claude                          # 清掉 cckm 等残留的 ANTHROPIC_* 变量，避免串味
+    export TRAE_CN_JWT="$jwt"            # CCR 配置里 api_key=$TRAE_CN_JWT，启动时注入最新 JWT（约 24h 过期）
+    command ccr restart >/dev/null 2>&1  # 用最新 JWT 重启 CCR
+    command ccr code --dangerously-skip-permissions "$@"
+}

@@ -25,7 +25,7 @@ if grep -q "$MARKER" "$RC" 2>/dev/null; then
 else
     {
         echo ""
-        echo "# ===== Claude 套餐切换 + TRAE CLI 模式（cc/cccc/ccclaude/cckm/cckimi/ta/trae）====="
+        echo "# ===== Claude 套餐切换 + TRAE CLI 模式（cc/cccc/ccclaude/cckm/cckimi/ta/trae/ccta）====="
         echo "source \"$SCRIPT\""
     } >> "$RC"
     echo "[ok]   已注入: $RC"
