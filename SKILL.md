@@ -1,6 +1,6 @@
 ---
 name: claude-multi-plan
-description: 在任意终端（PowerShell/Git Bash/WSL）用快捷命令在 Claude 官方套餐与 Kimi 套餐之间切换运行 Claude Code，互不影响登录态；并提供 TRAE CLI 启动模式快捷命令（ta=允许所有操作 / trae=普通）。当用户想配置多套餐切换、在不同设备复用同样配置、或问 cc/cckm/cckimi/ta/trae/ccta/ccta-aiden 之类命令时使用。
+description: 在任意终端（PowerShell/Git Bash/WSL）用快捷命令在 Claude 官方套餐与 Kimi 套餐之间切换运行 Claude Code，互不影响登录态；并提供字节内部链路快捷命令（ta/trae=TRAE CLI、ccta=Trae CN 网关、ccta-aiden/ccad=Aiden AIProxy）。当用户想配置多套餐切换、在不同设备复用同样配置、或问 cc/cckm/cckimi/ta/trae/ccta/ccta-aiden 之类命令时使用。
 ---
 
 # claude-multi-plan
