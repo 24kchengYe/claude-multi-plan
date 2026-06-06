@@ -82,9 +82,10 @@ ta()   { command traecli --permission-mode bypass_permissions "$@"; }
 # 普通模式：默认 Agent 模式，危险操作仍会请求审批
 trae() { command traecli "$@"; }
 
-# ---- ccta：Claude Code 跑在 traecli 的内部模型上（经 claude-code-router 反代）----
-# cc 说 Anthropic 协议，Trae CN 网关只开 OpenAI 协议，靠本地 CCR 把 /v1/messages 翻译成 /v1/chat/completions。
-# 一键：刷新 trae JWT → 拉起 CCR → 启动 Claude Code + 允许所有操作；默认模型 openrouter-2o（cc 内可 /model 切换）。
+# ---- ccta：Claude Code 跑在 traecli 的内部模型上（经 CCR 反代，Trae CN 网关）----
+# cc 说 Anthropic 协议，Trae CN 网关（lcd.bytedance.net/litellm_trae）只开 OpenAI 协议，
+# 靠本地 CCR 把 /v1/messages 翻译成 /v1/chat/completions。
+# 一键：刷新 trae JWT → 拉起 CCR → 启动 Claude Code + 允许所有操作；默认模型 openrouter-2o。
 unalias ccta 2>/dev/null || true
 ccta() {
     local jwt
@@ -104,3 +105,45 @@ ccta() {
     fi
     command claude --dangerously-skip-permissions "$@"
 }
+
+# ---- ccta-aiden：Claude Code 跑在 Aiden AIProxy 上（经本地 CCR + aiden-proxy 双桥）----
+# Claude Code 发 Anthropic 协议 → CCR(127.0.0.1:3456) 转成 OpenAI 协议 →
+# aiden-proxy(127.0.0.1:3457) 加上 Aiden 双认证 → Aiden AIProxy(https://aiden-aiproxy.bytedance.net/v2)
+# 默认模型 gpt-5.4（cc 内可 /model 切换档位）
+unalias ccta-aiden ccad 2>/dev/null || true
+ccta-aiden() {
+    # 1. 检查 aiden 登录状态
+    if ! command aiden auth status >/dev/null 2>&1; then
+        echo "[ccta-aiden] aiden 未登录，请先运行 aiden auth login 完成 ByteCloud SSO 认证。" >&2
+        return 1
+    fi
+
+    _use_claude                          # 清掉 cckm 等残留的 ANTHROPIC_* 变量，避免串味
+
+    # 2. 启动 aiden-proxy（如果还没在跑）
+    if ! command lsof -i :3457 >/dev/null 2>&1; then
+        local proxy_log="$HOME/.claude/skills/claude-multi-plan/aiden-proxy.log"
+        echo "[ccta-aiden] 启动 aiden-proxy ..." >&2
+        nohup node "$HOME/.claude/skills/claude-multi-plan/aiden-proxy.js" >"$proxy_log" 2>&1 &
+        sleep 2
+        if ! command lsof -i :3457 >/dev/null 2>&1; then
+            echo "[ccta-aiden] aiden-proxy 启动失败，日志：$proxy_log" >&2
+            return 1
+        fi
+    fi
+
+    # 3. 重启 CCR（加载最新配置）
+    command ccr restart >/dev/null 2>&1
+
+    # 4. 激活 CCR 环境变量
+    eval "$(command ccr activate)"
+
+    # 5. 安全护栏
+    if [ "$ANTHROPIC_BASE_URL" != "http://127.0.0.1:3456" ]; then
+        echo "[ccta-aiden] ANTHROPIC_BASE_URL 未指向本地 CCR（实际：${ANTHROPIC_BASE_URL:-空}）。已中止以防误用真 Anthropic 计费。" >&2
+        return 1
+    fi
+
+    command claude --dangerously-skip-permissions "$@"
+}
+ccad() { ccta-aiden "$@"; }

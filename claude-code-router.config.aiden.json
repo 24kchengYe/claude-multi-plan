@@ -1,0 +1,25 @@
+{
+  "LOG": true,
+  "HOST": "127.0.0.1",
+  "PORT": 3456,
+  "CUSTOM_ROUTER_PATH": "~/.claude-code-router/custom-router.js",
+  "Providers": [
+    {
+      "name": "trae-cn",
+      "api_base_url": "http://127.0.0.1:3457/v2/chat/completions",
+      "api_key": "sk_matthew",
+      "models": [
+        "gpt-5.4",
+        "gpt-5.5",
+        "gpt-5.5-paygo",
+        "deepseek-v4-pro",
+        "deepseek-v4-flash",
+        "glm-5v",
+        "glm-5.1"
+      ]
+    }
+  ],
+  "Router": {
+    "default": "trae-cn,gpt-5.4"
+  }
+}
