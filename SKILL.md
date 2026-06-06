@@ -162,7 +162,7 @@ cp ~/.claude/skills/claude-multi-plan/claude-code-router.config.trae-cn.json ~/.
 cp ~/.claude/skills/claude-multi-plan/claude-code-router.custom-router.trae-cn.js ~/.claude-code-router/custom-router.js
 
 # 4. ccta-aiden 用（推荐）：额外装 aiden CLI 并登录
-npm install -g @aiden/cli   # 或按内部文档安装
+npm install -g @aiden-cli/core --registry https://bnpm.byted.org
 aiden auth login             # 浏览器 SSO 登录
 
 # 5. 复制 aiden 配置（与 traecn 二选一，不能同时用）
