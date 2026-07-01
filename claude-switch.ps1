@@ -12,7 +12,7 @@
 # ---- Kimi 套餐配置 ----
 # key 不写在这里。放到同目录的 claude-switch.local.ps1（该文件不上传 GitHub）。
 $KimiBaseUrl = "https://api.kimi.com/coding"
-$KimiModel   = "kimi-k2.6"
+$KimiModel   = "kimi-k2.7"
 $KimiKey     = ""   # 由 claude-switch.local.ps1 覆盖
 
 # 读取本地私密配置（含 key），存在才加载

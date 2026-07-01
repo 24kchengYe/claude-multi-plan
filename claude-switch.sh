@@ -15,7 +15,7 @@
 # ---- Kimi 套餐配置 ----
 # key 不写在这里。放到同目录的 claude-switch.local.sh（该文件不上传 GitHub）。
 KIMI_BASE_URL="https://api.kimi.com/coding"
-KIMI_MODEL="kimi-k2.6"
+KIMI_MODEL="kimi-k2.7"
 KIMI_KEY=""   # 由 claude-switch.local.sh 覆盖
 
 # 读取本地私密配置（含 key），存在才加载
