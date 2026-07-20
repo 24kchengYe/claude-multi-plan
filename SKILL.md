@@ -218,9 +218,13 @@ cp ~/.claude/skills/claude-multi-plan/claude-code-router.custom-router.aiden.js 
 
 ## Kimi 套餐接入参数
 
-- Base URL：`https://api.kimi.com/coding`（Kimi Code **订阅套餐**专属端点）
-- Model：`kimi-k2.6`（或 `kimi-k2.5`）
+- Base URL：`https://api.kimi.com/coding/`（Kimi Code **订阅套餐**专属端点）
+- Model：`k3[1m]`（Kimi K3，最高 1M 上下文）
+- Context：`CLAUDE_CODE_AUTO_COMPACT_WINDOW=1048576`、`CLAUDE_CODE_MAX_CONTEXT_TOKENS=1048576`
+- Effort：`CLAUDE_CODE_EFFORT_LEVEL=high`（必须保持 thinking 开启，否则 K3 请求会被路由到 K2.6）
 - Key：在 https://www.kimi.com/code 的 Console 生成，格式 `sk-kimi-...`，鉴权走 `ANTHROPIC_AUTH_TOKEN`
+
+> `k3[1m]` 需要 Allegretto 或更高会员档位；Moderato 可使用 `k3`，但上下文上限为 256K。脚本已默认设置 `CLAUDE_CODE_EFFORT_LEVEL=high` 来保持 thinking 开启；若关闭，K3 请求会被后端路由到 K2.6。切换模型后建议新开会话，避免旧缓存失效带来的额外消耗。
 
 > ⚠️ 注意区分两套端点：`api.kimi.com/coding` 是 **Kimi Code 订阅套餐**端点（`sk-kimi` key）；
 > `api.moonshot.cn/anthropic` 是 **Moonshot 按量付费 API** 端点（platform key）。两者 key 不通用，用错会一直 401。
