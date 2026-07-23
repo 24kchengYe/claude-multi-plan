@@ -20,7 +20,7 @@ foreach ($p in $profiles) {
     if ($content -and $content.Contains($marker)) {
         Write-Host "[skip] 已存在引用: $p" -ForegroundColor DarkGray
     } else {
-        Add-Content -Path $p -Value "`n# ===== Claude Code 套餐切换（cc/cccc/ccclaude/cckm/cckimi）=====`n$line"
+        Add-Content -Path $p -Value "`n# ===== Claude/Codex 套餐切换（codex/codexsafe/cc/cccc/ccclaude/cckm/cckimi）=====`n$line"
         Write-Host "[ok]   已注入: $p" -ForegroundColor Green
     }
 }

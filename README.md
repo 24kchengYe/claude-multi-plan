@@ -8,6 +8,8 @@
 
 | 命令 | 套餐 | 模式 |
 |------|------|------|
+| `codex` | Codex CLI | 允许所有操作（`--dangerously-bypass-approvals-and-sandbox`） |
+| `codexsafe` | Codex CLI | 普通确认 |
 | `cc` / `cccc` | 官方登录 | 允许所有操作（`--dangerously-skip-permissions`） |
 | `ccclaude` | 官方登录 | 普通确认 |
 | `cckm` | Kimi 套餐 | 允许所有操作 |
@@ -16,7 +18,7 @@
 | `trae` | TRAE CLI（字节内部） | 普通模式 |
 | `ccta` | Claude Code × TRAE 内部模型 | 允许所有操作；cc 跑在内部模型上（经 claude-code-router 反代） |
 
-> `cc` / `cckm` 在**任何电脑**可用。`ta` / `trae` / `ccta` 是字节内部能力，需**内网 + 认证 ByteDance**，见下方专节。
+> `codex` / `codexsafe` / `cc` / `cckm` 在**任何电脑**可用。`ta` / `trae` / `ccta` 是字节内部能力，需**内网 + 认证 ByteDance**，见下方专节。
 
 ## 原理
 

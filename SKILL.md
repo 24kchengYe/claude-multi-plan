@@ -11,6 +11,8 @@ description: 在任意终端（PowerShell/Git Bash/WSL）用快捷命令在 Clau
 
 | 命令 | 套餐 | 模式 |
 |------|------|------|
+| `codex` | Codex CLI | 允许所有操作（--dangerously-bypass-approvals-and-sandbox） |
+| `codexsafe` | Codex CLI | 普通确认 |
 | `cc` / `cccc` | 官方登录 | 允许所有操作（--dangerously-skip-permissions） |
 | `ccclaude` | 官方登录 | 普通确认 |
 | `cckm` | Kimi 套餐 | 允许所有操作 |
@@ -18,7 +20,7 @@ description: 在任意终端（PowerShell/Git Bash/WSL）用快捷命令在 Clau
 | `ta` | TRAE CLI | 允许所有操作（--permission-mode bypass_permissions） |
 | `trae` | TRAE CLI | 普通模式（默认 Agent 模式，按需审批） |
 | `ccta` | Claude Code × Trae CN 网关 | 允许所有操作；cc 跑在 Trae CN 内部模型上（经 CCR 反代） |
-| `ccta-aiden` / `ccad` | Claude Code × Aiden AIProxy | 允许所有操作；cc 跑在 Aiden 内部模型上（经 CCR + aiden-proxy 双桥） |
+| `ccad` | Claude Code × ModelHub / LiteLLM | 允许所有操作；cc 跑在 LiteLLM 统一网关上（经 CCR 单桥） |
 
 > `ta` / `trae` 是字节内部 **TRAE CLI**（`traecli`/`traex`，基于 codex 二开）的启动快捷命令，仅 mac/linux。
 > 前置：已 `curl ... install_all_platforms.sh | sh` 装好并 `traecli` 登录。

@@ -4,6 +4,8 @@
 #   . "$HOME\.claude\skills\claude-multi-plan\claude-switch.ps1"
 #
 # 命令：
+#   codex      -> Codex CLI + 允许所有操作
+#   codexsafe  -> Codex CLI + 普通确认
 #   cc / cccc  -> 官方登录 + 允许所有操作
 #   ccclaude   -> 官方登录 + 普通
 #   cckm       -> Kimi 套餐 + 允许所有操作
@@ -41,6 +43,11 @@ function _UseKimi {
     $env:ANTHROPIC_DEFAULT_SONNET_MODEL = $KimiModel
     return $true
 }
+
+# Codex CLI：默认 codex 走全权限模式；需要正常审批/沙箱时用 codexsafe。
+function _CodexBin { (Get-Command codex -CommandType Application -ErrorAction Stop).Source }
+function codex { & (_CodexBin) --dangerously-bypass-approvals-and-sandbox @args }
+function codexsafe { & (_CodexBin) @args }
 
 # 官方 + 允许所有操作
 function cc   { _UseClaude; claude --dangerously-skip-permissions @args }

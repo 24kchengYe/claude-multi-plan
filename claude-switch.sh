@@ -5,6 +5,8 @@
 #   source "$HOME/.claude/skills/claude-multi-plan/claude-switch.sh"
 #
 # 命令：
+#   codex      -> Codex CLI + 允许所有操作
+#   codexsafe  -> Codex CLI + 普通确认
 #   cc / cccc  -> 官方登录 + 允许所有操作
 #   ccclaude   -> 官方登录 + 普通
 #   cckm       -> Kimi 套餐 + 允许所有操作
@@ -75,6 +77,13 @@ for __d in "$HOME/.local/bin" "$HOME/.local/bin/node/bin"; do
     esac
 done
 unset __d
+
+# ---- Codex CLI 启动模式 ----
+unalias codex codexsafe 2>/dev/null || true
+# 默认 codex 走全权限模式；需要正常审批/沙箱时用 codexsafe。
+codex() { command codex --dangerously-bypass-approvals-and-sandbox "$@"; }
+codexsafe() { command codex "$@"; }
+
 unalias ta trae 2>/dev/null || true
 # 允许所有操作：官方 bypass_permissions 预设（可编辑工作区外文件 + 联网 + 不审批），
 # 不用文档不推荐的 -y/--dangerously-bypass-approvals-and-sandbox（那个会完全关沙箱、永不审批）。
@@ -106,15 +115,38 @@ ccta() {
     command claude --dangerously-skip-permissions "$@"
 }
 
-# ---- ccta-aiden：Claude Code 跑在 Aiden AIProxy 上（经本地 CCR + aiden-proxy 双桥）----
+# ---- ccllm：Claude Code 跑在 ModelHub / LiteLLM 上（经 CCR 单桥）----
+# Claude Code 发 Anthropic 协议 → CCR(127.0.0.1:3456) 转成 OpenAI 协议 →
+# 直接对接 LiteLLM(https://lcd.bytedance.net/litellm/v1/chat/completions)
+# 默认模型 gpt-5.4-2026-03-05（cc 内可 /model 切换档位）
+unalias ccllm 2>/dev/null || true
+ccllm() {
+    _use_claude                          # 清掉 cckm 等残留的 ANTHROPIC_* 变量，避免串味
+
+    # 重启 CCR（加载最新 LiteLLM 配置）
+    command ccr restart >/dev/null 2>&1
+
+    # 激活 CCR 环境变量
+    eval "$(command ccr activate)"
+
+    # 安全护栏
+    if [ "$ANTHROPIC_BASE_URL" != "http://127.0.0.1:3456" ]; then
+        echo "[ccllm] ANTHROPIC_BASE_URL 未指向本地 CCR（实际：${ANTHROPIC_BASE_URL:-空}）。已中止以防误用真 Anthropic 计费。" >&2
+        return 1
+    fi
+
+    command claude --dangerously-skip-permissions "$@"
+}
+
+# ---- ccad：Claude Code 跑在 Aiden AIProxy 上（经本地 CCR + aiden-proxy 双桥）----
 # Claude Code 发 Anthropic 协议 → CCR(127.0.0.1:3456) 转成 OpenAI 协议 →
 # aiden-proxy(127.0.0.1:3457) 加上 Aiden 双认证 → Aiden AIProxy(https://aiden-aiproxy.bytedance.net/v2)
 # 默认模型 gpt-5.4（cc 内可 /model 切换档位）
-unalias ccta-aiden ccad 2>/dev/null || true
-ccta-aiden() {
+unalias ccad 2>/dev/null || true
+ccad() {
     # 1. 检查 aiden 登录状态
     if ! command aiden auth status >/dev/null 2>&1; then
-        echo "[ccta-aiden] aiden 未登录，请先运行 aiden auth login 完成 ByteCloud SSO 认证。" >&2
+        echo "[ccad] aiden 未登录，请先运行 aiden auth login 完成 ByteCloud SSO 认证。" >&2
         return 1
     fi
 
@@ -123,11 +155,11 @@ ccta-aiden() {
     # 2. 启动 aiden-proxy（如果还没在跑）
     if ! command lsof -i :3457 >/dev/null 2>&1; then
         local proxy_log="$HOME/.claude/skills/claude-multi-plan/aiden-proxy.log"
-        echo "[ccta-aiden] 启动 aiden-proxy ..." >&2
+        echo "[ccad] 启动 aiden-proxy ..." >&2
         nohup node "$HOME/.claude/skills/claude-multi-plan/aiden-proxy.js" >"$proxy_log" 2>&1 &
         sleep 2
         if ! command lsof -i :3457 >/dev/null 2>&1; then
-            echo "[ccta-aiden] aiden-proxy 启动失败，日志：$proxy_log" >&2
+            echo "[ccad] aiden-proxy 启动失败，日志：$proxy_log" >&2
             return 1
         fi
     fi
@@ -140,10 +172,9 @@ ccta-aiden() {
 
     # 5. 安全护栏
     if [ "$ANTHROPIC_BASE_URL" != "http://127.0.0.1:3456" ]; then
-        echo "[ccta-aiden] ANTHROPIC_BASE_URL 未指向本地 CCR（实际：${ANTHROPIC_BASE_URL:-空}）。已中止以防误用真 Anthropic 计费。" >&2
+        echo "[ccad] ANTHROPIC_BASE_URL 未指向本地 CCR（实际：${ANTHROPIC_BASE_URL:-空}）。已中止以防误用真 Anthropic 计费。" >&2
         return 1
     fi
 
     command claude --dangerously-skip-permissions "$@"
 }
-ccad() { ccta-aiden "$@"; }
