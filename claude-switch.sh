@@ -16,8 +16,9 @@
 
 # ---- Kimi 套餐配置 ----
 # key 不写在这里。放到同目录的 claude-switch.local.sh（该文件不上传 GitHub）。
-KIMI_BASE_URL="https://api.kimi.com/coding"
-KIMI_MODEL="kimi-k2.6"
+KIMI_BASE_URL="https://api.kimi.com/coding/"
+KIMI_MODEL="k3[1m]"
+KIMI_CONTEXT_TOKENS="1048576"
 KIMI_KEY=""   # 由 claude-switch.local.sh 覆盖
 
 # 读取本地私密配置（含 key），存在才加载
@@ -36,8 +37,10 @@ unset __cms_src
 # 切回官方登录态：清掉所有 Kimi 环境变量 + 旧的 API key（避免冲突）
 _use_claude() {
     unset ANTHROPIC_BASE_URL ANTHROPIC_AUTH_TOKEN ANTHROPIC_MODEL \
-          ANTHROPIC_DEFAULT_OPUS_MODEL ANTHROPIC_DEFAULT_SONNET_MODEL \
-          ANTHROPIC_API_KEY
+          ANTHROPIC_DEFAULT_FABLE_MODEL ANTHROPIC_DEFAULT_OPUS_MODEL \
+          ANTHROPIC_DEFAULT_SONNET_MODEL ANTHROPIC_DEFAULT_HAIKU_MODEL \
+          CLAUDE_CODE_SUBAGENT_MODEL CLAUDE_CODE_AUTO_COMPACT_WINDOW \
+          CLAUDE_CODE_MAX_CONTEXT_TOKENS CLAUDE_CODE_EFFORT_LEVEL ANTHROPIC_API_KEY
 }
 
 # 切到 Kimi 套餐（仅当前 shell）
@@ -51,8 +54,14 @@ _use_kimi() {
     export ANTHROPIC_BASE_URL="$KIMI_BASE_URL"
     export ANTHROPIC_AUTH_TOKEN="$KIMI_KEY"
     export ANTHROPIC_MODEL="$KIMI_MODEL"
+    export CLAUDE_CODE_EFFORT_LEVEL="high"
+    export ANTHROPIC_DEFAULT_FABLE_MODEL="$KIMI_MODEL"
     export ANTHROPIC_DEFAULT_OPUS_MODEL="$KIMI_MODEL"
     export ANTHROPIC_DEFAULT_SONNET_MODEL="$KIMI_MODEL"
+    export ANTHROPIC_DEFAULT_HAIKU_MODEL="$KIMI_MODEL"
+    export CLAUDE_CODE_SUBAGENT_MODEL="$KIMI_MODEL"
+    export CLAUDE_CODE_AUTO_COMPACT_WINDOW="$KIMI_CONTEXT_TOKENS"
+    export CLAUDE_CODE_MAX_CONTEXT_TOKENS="$KIMI_CONTEXT_TOKENS"
 }
 
 # 先解除可能存在的同名 alias，避免函数定义语法冲突

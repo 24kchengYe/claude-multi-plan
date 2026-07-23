@@ -1,6 +1,6 @@
 ---
 name: claude-multi-plan
-description: 在任意终端（PowerShell/Git Bash/WSL）用快捷命令在 Claude 官方套餐与 Kimi 套餐之间切换运行 Claude Code，互不影响登录态；并提供 TRAE CLI 启动模式快捷命令（ta=允许所有操作 / trae=普通）。当用户想配置多套餐切换、在不同设备复用同样配置、或问 cc/cckm/cckimi/ta/trae/ccta/ccta-aiden 之类命令时使用。
+description: 在任意终端（PowerShell/Git Bash/WSL）用快捷命令在 Claude 官方套餐与 Kimi 套餐之间切换运行 Claude Code，互不影响登录态；并提供字节内部链路快捷命令（ta/trae=TRAE CLI、ccta=Trae CN 网关、ccta-aiden/ccad=Aiden AIProxy）。当用户想配置多套餐切换、在不同设备复用同样配置、或问 cc/cckm/cckimi/ta/trae/ccta/ccta-aiden 之类命令时使用。
 ---
 
 # claude-multi-plan
@@ -110,11 +110,51 @@ cc 的 `/model` 菜单只有 Opus/Sonnet/Haiku，**它显示什么不代表真�
 
 ## 原理
 
-Claude Code 用哪套额度取决于三个环境变量：`ANTHROPIC_BASE_URL`、`ANTHROPIC_AUTH_TOKEN`、`ANTHROPIC_MODEL`。
-- 官方命令：清空这些变量 → 走本地 OAuth 登录态（`api.anthropic.com`）。
-- Kimi 命令：临时设这些变量（仅当前窗口）→ 走 Kimi 端点，不触发登录、不动官方凭证。
+### 一、官方登录 vs API 登录
 
-因为变量是**窗口级**的，两个终端可同时各跑一个套餐，互不串味。
+Claude Code 启动时要回答："请求发给谁、用什么身份？" 有两条互斥的路：
+
+| | **官方登录 (OAuth 订阅)** | **API 登录 (API Key)** |
+|---|---|---|
+| 怎么进 | `/login` 登录 Anthropic 账号 | 给三个环境变量(下方) |
+| 身份 | OAuth 令牌，走 Claude.ai 订阅套餐(Pro/Max) | 开发者 API Key (`sk-ant-...`) |
+| 计费 | 按套餐扣额度 | 按 token 实时计费 |
+| 后端 | 写死 `api.anthropic.com`，**动不了** | 可改，**这是接外部模型的唯一入口** |
+| 本 skill | `cc` / `ccclaude` | `cckm` / `ccta` / `ccta-aiden` |
+
+控制 API 登录的三个环境变量（本 skill 所有切换命令的本质，就是改它们）：
+- `ANTHROPIC_AUTH_TOKEN`：密钥/令牌
+- `ANTHROPIC_BASE_URL`：请求发到哪（默认 `api.anthropic.com`）
+- `ANTHROPIC_MODEL`：用哪个模型
+
+官方命令清空这些变量 → 走 OAuth 登录态；切换命令临时设这些变量（**仅当前窗口**）→ 走外部端点，不触发登录、不动官方凭证。因为变量是**窗口级**的，两个终端可同时各跑一个套餐，互不串味。
+
+### 二、接外部大模型的两个层次
+
+外部模型能不能直接接，取决于它"说不说 Claude 的话"（Claude Code 只懂 Anthropic 的 `/v1/messages` 协议）：
+
+- **层次 1 — 对方已兼容 Anthropic 协议**：直接改 `BASE_URL`/`TOKEN`/`MODEL` 三件套即可，cc 察觉不到换了后端。`cckm`(Kimi 端点) 属此类。
+- **层次 2 — 对方只懂 OpenAI 协议**（DeepSeek/GLM/Qwen 原生，只开 `/v1/chat/completions`）：协议对不上，纯改环境变量会失败，**必须在中间架一个反代做协议翻译**。`ccta`(Trae CN) / `ccta-aiden`(Aiden) 都因此走 CCR 反代。
+
+### 三、反代（reverse proxy / "反代 CCSwitch"）原理
+
+反代是夹在 Claude Code 和原生 OpenAI 协议模型之间的**双向翻译层**。本地起一个服务（本 skill 用 [claude-code-router](https://github.com/musistudio/claude-code-router)，监听 `127.0.0.1:3456`），把 `ANTHROPIC_BASE_URL` 指向它，它做四件事：
+
+```
+Claude Code ──Anthropic /v1/messages──> 反代 ──OpenAI /v1/chat/completions──> DeepSeek/GLM/Qwen
+   (只会说Claude)  <──Anthropic SSE响应── (CCR翻译) <──OpenAI 响应──         (原生API)
+```
+
+1. **接收**：接住 Claude 格式请求
+2. **路由 (Switch)**：按模型名决定转发给哪个后端（见各链路的 custom-router 档位映射表）
+3. **翻译(去)**：Anthropic 的 `system`/`messages`/`tools` → OpenAI 结构
+4. **翻译(回)**：对方流式响应逐块 → 改写回 Anthropic SSE 事件，让 cc 以为是 Claude 在答
+
+**最易翻车的两点**（也是为什么不是"随便改个地址"）：
+- **工具调用翻译**：`tool_use`/`tool_result`(Anthropic) ↔ `tool_calls`/`function`(OpenAI)，结构不同，错一个字段整个 agent 循环就死——cc 是 agent，重度依赖工具调用。
+- **流式翻译**：两边 SSE 事件流结构完全不同，必须实时逐块转，不能等收完。
+
+> 现成开源反代：`claude-code-router`(本 skill 用的) / `y-router` / `LiteLLM`(带 Anthropic 兼容层)。
 
 ## 安装（新设备）
 
@@ -180,9 +220,13 @@ cp ~/.claude/skills/claude-multi-plan/claude-code-router.custom-router.aiden.js 
 
 ## Kimi 套餐接入参数
 
-- Base URL：`https://api.kimi.com/coding`（Kimi Code **订阅套餐**专属端点）
-- Model：`kimi-k2.6`（或 `kimi-k2.5`）
+- Base URL：`https://api.kimi.com/coding/`（Kimi Code **订阅套餐**专属端点）
+- Model：`k3[1m]`（Kimi K3，最高 1M 上下文）
+- Context：`CLAUDE_CODE_AUTO_COMPACT_WINDOW=1048576`、`CLAUDE_CODE_MAX_CONTEXT_TOKENS=1048576`
+- Effort：`CLAUDE_CODE_EFFORT_LEVEL=high`（必须保持 thinking 开启，否则 K3 请求会被路由到 K2.6）
 - Key：在 https://www.kimi.com/code 的 Console 生成，格式 `sk-kimi-...`，鉴权走 `ANTHROPIC_AUTH_TOKEN`
+
+> `k3[1m]` 需要 Allegretto 或更高会员档位；Moderato 可使用 `k3`，但上下文上限为 256K。脚本已默认设置 `CLAUDE_CODE_EFFORT_LEVEL=high` 来保持 thinking 开启；若关闭，K3 请求会被后端路由到 K2.6。切换模型后建议新开会话，避免旧缓存失效带来的额外消耗。
 
 > ⚠️ 注意区分两套端点：`api.kimi.com/coding` 是 **Kimi Code 订阅套餐**端点（`sk-kimi` key）；
 > `api.moonshot.cn/anthropic` 是 **Moonshot 按量付费 API** 端点（platform key）。两者 key 不通用，用错会一直 401。
