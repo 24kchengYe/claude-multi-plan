@@ -60,7 +60,12 @@ function _UseKimi {
 }
 
 # Codex CLI：默认 codex 走全权限模式；需要正常审批/沙箱时用 codexsafe。
-function _CodexBin { (Get-Command codex -CommandType Application -ErrorAction Stop).Source }
+function _CodexBin {
+    $cmds = @(Get-Command codex -CommandType Application -ErrorAction Stop)
+    $cmd = $cmds | Where-Object { $_.Source -like '*.cmd' -or $_.Source -like '*.exe' } | Select-Object -First 1
+    if (-not $cmd) { $cmd = $cmds | Select-Object -First 1 }
+    return $cmd.Source
+}
 function codex { & (_CodexBin) --dangerously-bypass-approvals-and-sandbox @args }
 function codexsafe { & (_CodexBin) @args }
 
