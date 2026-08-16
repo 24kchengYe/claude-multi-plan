@@ -75,14 +75,23 @@ _use_kimi() {
 
 # 切到 DeepSeek 套餐（仅当前 shell）
 # DeepSeek 端点原生兼容 Anthropic 协议，无需 CCR 反代；先清场再设变量，避免与 cckm 等残留串味
+# Key 解析顺序：claude-switch.local.sh 里的 DEEPSEEK_KEY 显式覆盖 > ai-api-gateway 解锁文件
+# （默认 ~/.config/ai-gateway/secrets.env，可用 AI_GATEWAY_SECRETS_PATH 覆盖）里的 DEEPSEEK_API_KEY
 _use_deepseek() {
-    if [ -z "$DEEPSEEK_KEY" ]; then
-        echo "[claude-switch] 未配置 DeepSeek key。请在 claude-switch.local.sh 里设置 DEEPSEEK_KEY。" >&2
+    local ds_key="$DEEPSEEK_KEY"
+    if [ -z "$ds_key" ]; then
+        local store="${AI_GATEWAY_SECRETS_PATH:-$HOME/.config/ai-gateway/secrets.env}"
+        if [ -f "$store" ]; then
+            ds_key="$(grep -E '^DEEPSEEK_API_KEY=.+$' "$store" | tail -n 1 | cut -d= -f2-)"
+        fi
+    fi
+    if [ -z "$ds_key" ]; then
+        echo "[claude-switch] 未配置 DeepSeek key。请解锁 ai-api-gateway（secrets.env 含 DEEPSEEK_API_KEY）或在 claude-switch.local.sh 里设置 DEEPSEEK_KEY。" >&2
         return 1
     fi
     _use_claude
     export ANTHROPIC_BASE_URL="$DEEPSEEK_BASE_URL"
-    export ANTHROPIC_AUTH_TOKEN="$DEEPSEEK_KEY"
+    export ANTHROPIC_AUTH_TOKEN="$ds_key"
     export ANTHROPIC_MODEL="$DEEPSEEK_MODEL"
     export ANTHROPIC_SMALL_FAST_MODEL="$DEEPSEEK_MODEL"   # 后台小任务（haiku 档）也映射到 DeepSeek，避免 404
     export ANTHROPIC_DEFAULT_FABLE_MODEL="$DEEPSEEK_MODEL"

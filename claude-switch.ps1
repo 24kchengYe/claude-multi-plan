@@ -70,14 +70,25 @@ function _UseKimi {
 
 # 切到 DeepSeek 套餐（仅当前窗口）
 # DeepSeek 端点原生兼容 Anthropic 协议，无需 CCR 反代；先清场再设变量，避免与 cckm 等残留串味
+# Key 解析顺序：claude-switch.local.ps1 里的 $DeepSeekKey 显式覆盖 > ai-api-gateway 解锁文件
+# （默认 D:\server-ops\secrets\ai-gateway-secrets.env，可用 $env:AI_GATEWAY_SECRETS_PATH 覆盖）里的 DEEPSEEK_API_KEY
 function _UseDeepSeek {
-    if ([string]::IsNullOrEmpty($DeepSeekKey)) {
-        Write-Host "[claude-switch] 未配置 DeepSeek key。请在 claude-switch.local.ps1 里设置 `$DeepSeekKey。" -ForegroundColor Yellow
+    $dsKey = $DeepSeekKey
+    if ([string]::IsNullOrEmpty($dsKey)) {
+        $store = $env:AI_GATEWAY_SECRETS_PATH
+        if ([string]::IsNullOrEmpty($store)) { $store = 'D:\server-ops\secrets\ai-gateway-secrets.env' }
+        if (Test-Path -LiteralPath $store) {
+            $m = Get-Content -LiteralPath $store | Where-Object { $_ -match '^DEEPSEEK_API_KEY=(.+)$' } | Select-Object -Last 1
+            if ($m) { $dsKey = ($m -split '=',2)[1].Trim() }
+        }
+    }
+    if ([string]::IsNullOrEmpty($dsKey)) {
+        Write-Host "[claude-switch] 未配置 DeepSeek key。请解锁 ai-api-gateway（ai-gateway-secrets.env 含 DEEPSEEK_API_KEY）或在 claude-switch.local.ps1 里设置 `$DeepSeekKey。" -ForegroundColor Yellow
         return $false
     }
     _UseClaude
     $env:ANTHROPIC_BASE_URL               = $DeepSeekBaseUrl
-    $env:ANTHROPIC_AUTH_TOKEN             = $DeepSeekKey
+    $env:ANTHROPIC_AUTH_TOKEN             = $dsKey
     $env:ANTHROPIC_MODEL                  = $DeepSeekModel
     $env:ANTHROPIC_SMALL_FAST_MODEL       = $DeepSeekModel   # 后台小任务（haiku 档）也映射到 DeepSeek，避免 404
     $env:ANTHROPIC_DEFAULT_FABLE_MODEL    = $DeepSeekModel
