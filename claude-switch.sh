@@ -136,12 +136,12 @@ ccdeepseek() { _use_deepseek && claude "$@"; }
 unalias cdx cdkm cdds 2>/dev/null || true
 _cms_store() { echo "${AI_GATEWAY_SECRETS_PATH:-$HOME/.config/ai-gateway/secrets.env}"; }
 _cms_field() {
-    grep -E "^$1=.+$" "$(_cms_store)" 2>/dev/null | tail -n 1 | cut -d= -f2-
+    grep -E "^$1=.+$" "$(_cms_store)" 2>/dev/null | tail -n 1 | cut -d= -f2- | tr -d '\r'
 }
 _codex_backend() {
-    # $1=home suffix, $2=model, $3=base_url, $4=env_key(config), $5=provider, $6=store field, $7=env var name
-    local suffix="$1" model="$2" base_url="$3" env_key_cfg="$4" provider="$5" store_field="$6" env_name="$7"
-    shift 7
+    # $1=home suffix, $2=model, $3=base_url, $4=env_key(config), $5=provider, $6=store field, $7=env var name, $8=extra TOML
+    local suffix="$1" model="$2" base_url="$3" env_key_cfg="$4" provider="$5" store_field="$6" env_name="$7" extra_cfg="$8"
+    shift 8
     local key home
     key="$(_cms_field "$store_field")"
     if [ -z "$key" ]; then
@@ -159,6 +159,7 @@ name = "$provider"
 base_url = "$base_url"
 env_key = "$env_key_cfg"
 wire_api = "responses"
+$extra_cfg
 EOF
     if [ "$1" = "exec" ]; then
         # exec 分支：-c 强制覆盖，防止当前目录的项目级 .codex/config.toml 盖掉后端配置
@@ -169,8 +170,9 @@ EOF
     fi
 }
 cdx()  { codex "$@"; }
-cdds() { _codex_backend deepseek 'deepseek-v4-pro' 'https://api.deepseek.com/v1' DEEPSEEK_API_KEY deepseek DEEPSEEK_API_KEY DEEPSEEK_API_KEY "$@"; }
-cdkm() { _codex_backend kimi 'k3' 'https://api.kimi.com/coding/v1' KIMI_API_KEY kimi KIMI_CODE_API_KEY KIMI_API_KEY "$@"; }
+cdds() { _codex_backend deepseek 'deepseek-v4-pro' 'https://api.deepseek.com/v1' DEEPSEEK_API_KEY deepseek DEEPSEEK_API_KEY DEEPSEEK_API_KEY '' "$@"; }
+cdkm() { _codex_backend kimi 'k3' 'https://api.kimi.com/coding/v1' KIMI_API_KEY kimi KIMI_CODE_API_KEY KIMI_API_KEY '[tools.web_search]
+enabled = false' "$@"; }
 
 # ---- TRAE CLI 启动模式（traecli/traex，仅 mac/linux）----
 # traex/traecli 装在 ~/.local/bin，ccr/node 装在 ~/.local/bin/node/bin，确保都在 PATH 上

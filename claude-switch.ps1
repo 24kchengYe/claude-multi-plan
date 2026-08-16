@@ -153,7 +153,7 @@ function _ReadStoreField {
 }
 
 function _CodexBackendHome {
-    param([string]$Name, [string]$Model, [string]$BaseUrl, [string]$EnvKey, [string]$Provider)
+    param([string]$Name, [string]$Model, [string]$BaseUrl, [string]$EnvKey, [string]$Provider, [string]$ExtraCfg = '')
     $codexHome = Join-Path $env:USERPROFILE ('.codex-' + $Name)
     New-Item -ItemType Directory -Force $codexHome | Out-Null
     $cfg = @"
@@ -165,19 +165,20 @@ name = "$Provider"
 base_url = "$BaseUrl"
 env_key = "$EnvKey"
 wire_api = "responses"
+$ExtraCfg
 "@
     Set-Content -LiteralPath (Join-Path $codexHome 'config.toml') -Value $cfg -Encoding ascii
     return $codexHome
 }
 
 function _RunCodexBackend {
-    param([string]$HomeSuffix, [string]$Model, [string]$BaseUrl, [string]$EnvKey, [string]$Provider, [string]$StoreField)
+    param([string]$HomeSuffix, [string]$Model, [string]$BaseUrl, [string]$EnvKey, [string]$Provider, [string]$StoreField, [string]$ExtraCfg = '')
     $key = _ReadStoreField $StoreField
     if (-not $key) {
         Write-Host ("[claude-switch] 未找到 " + $StoreField + "（请先解锁 ai-api-gateway）") -ForegroundColor Yellow
         return
     }
-    $codexHome = _CodexBackendHome $HomeSuffix $Model $BaseUrl $EnvKey $Provider
+    $codexHome = _CodexBackendHome $HomeSuffix $Model $BaseUrl $EnvKey $Provider $ExtraCfg
     $prevHome = $env:CODEX_HOME
     $prevKey = [Environment]::GetEnvironmentVariable($EnvKey, 'Process')
     try {
@@ -200,4 +201,4 @@ function _RunCodexBackend {
 
 function cdx  { codex @args }
 function cdds { _RunCodexBackend 'deepseek' 'deepseek-v4-pro' 'https://api.deepseek.com/v1' 'DEEPSEEK_API_KEY' 'deepseek' 'DEEPSEEK_API_KEY' }
-function cdkm { _RunCodexBackend 'kimi' 'k3' 'https://api.kimi.com/coding/v1' 'KIMI_API_KEY' 'kimi' 'KIMI_CODE_API_KEY' }
+function cdkm { _RunCodexBackend 'kimi' 'k3' 'https://api.kimi.com/coding/v1' 'KIMI_API_KEY' 'kimi' 'KIMI_CODE_API_KEY' "[tools.web_search]`nenabled = false" }
