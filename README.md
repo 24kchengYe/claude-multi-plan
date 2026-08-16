@@ -199,6 +199,7 @@ cp ~/.claude/skills/claude-multi-plan/claude-code-router.custom-router.aiden.js 
 - **Kimi 后端禁用 web_search**：Kimi 的 Responses 端点拒绝 `web_search` 工具（`tool type "web_search" is not supported`）。配置键是**顶层 `web_search = "disabled"`**（值 disabled/cached/indexed/live），不是 `[tools.web_search].enabled`；DeepSeek 不设限。
 - **Windows 首次运行沙箱提示**：隔离 CODEX_HOME（`~/.codex-deepseek` / `~/.codex-kimi`）首次启动会弹 "Set up the Codex agent sandbox"。launcher 已自动从主 CODEX_HOME 播种沙箱状态并写 `[windows] sandbox="elevated"` 跳过提示（cd* 恒以 bypass 运行，沙箱不实际使用）；手动遇到时选 2（non-admin）。
 - **macOS 解锁文件行尾**：secrets 文件混入 CRLF 会让提取的 key 带 `\r` → Codex 401。`_cms_field` 已 `tr -d '\r'` 防御；同步文件时保持 LF。
+- **Codex 第三方模型弹 "Model metadata not found" 警告**：0.147 的 `model_catalog_json` 键期望数字（不是路径），无法用自定义目录静默，属外观警告、不影响对话。launcher 已写 `model_context_window`（cdds 1M / cdkm 256K）与 80% 的 `model_auto_compact_token_limit` 修正自动压缩行为，忽略该警告即可。
 
 ---
 
