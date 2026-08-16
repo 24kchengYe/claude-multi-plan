@@ -156,6 +156,14 @@ function _CodexBackendHome {
     param([string]$Name, [string]$Model, [string]$BaseUrl, [string]$EnvKey, [string]$Provider, [string]$ExtraCfg = '', [string]$WebMode = '')
     $codexHome = Join-Path $env:USERPROFILE ('.codex-' + $Name)
     New-Item -ItemType Directory -Force $codexHome | Out-Null
+    # 从主 CODEX_HOME 播种沙箱注册状态，跳过首次运行的 Windows 沙箱设置提示。
+    # cd* 恒以 --dangerously-bypass-approvals-and-sandbox 运行、沙箱不实际使用，复制只为满足首次运行检查。
+    foreach ($item in @('.sandbox', '.sandbox-bin', '.sandbox-secrets', 'cap_sid', '.sandbox_migration')) {
+        $src = Join-Path $env:USERPROFILE ('.codex\' + $item)
+        if ((Test-Path $src) -and -not (Test-Path (Join-Path $codexHome $item))) {
+            Copy-Item $src (Join-Path $codexHome $item) -Recurse -Force -ErrorAction SilentlyContinue
+        }
+    }
     $webLine = ''
     if ($WebMode) { $webLine = 'web_search = "' + $WebMode + '"' }
     $cfg = @"
@@ -169,6 +177,9 @@ env_key = "$EnvKey"
 wire_api = "responses"
 $webLine
 $ExtraCfg
+
+[windows]
+sandbox = "elevated"
 "@
     Set-Content -LiteralPath (Join-Path $codexHome 'config.toml') -Value $cfg -Encoding ascii
     return $codexHome

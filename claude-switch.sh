@@ -151,6 +151,13 @@ _codex_backend() {
     [ -n "$web_mode" ] && web_line="web_search = \"$web_mode\"" || web_line=""
     home="$HOME/.codex-$suffix"
     mkdir -p "$home"
+    # 从主 CODEX_HOME 播种沙箱注册状态，跳过首次运行的 Windows 沙箱设置提示
+    # （cd* 恒以 bypass 运行、沙箱不实际使用；macOS 无此提示，复制为空操作）
+    for item in .sandbox .sandbox-bin .sandbox-secrets cap_sid .sandbox_migration; do
+        if [ -e "$HOME/.codex/$item" ] && [ ! -e "$home/$item" ]; then
+            cp -R "$HOME/.codex/$item" "$home/$item" 2>/dev/null || true
+        fi
+    done
     cat > "$home/config.toml" <<EOF
 model = "$model"
 model_provider = "$provider"
@@ -162,6 +169,9 @@ env_key = "$env_key_cfg"
 wire_api = "responses"
 $web_line
 $extra_cfg
+
+[windows]
+sandbox = "elevated"
 EOF
     if [ "$1" = "exec" ]; then
         # exec 分支：-c 强制覆盖，防止当前目录的项目级 .codex/config.toml 盖掉后端配置
