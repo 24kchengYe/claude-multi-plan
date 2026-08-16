@@ -240,13 +240,13 @@ cp ~/.claude/skills/claude-multi-plan/claude-code-router.custom-router.aiden.js 
 ## DeepSeek 套餐接入参数
 
 - Base URL：`https://api.deepseek.com/anthropic`（DeepSeek **官方 Anthropic 兼容端点**，无需 CCR 反代，直连即可）
-- Model：`deepseek-chat`（默认）；cc 里可用 `/model` 换成 `deepseek-reasoner`（思考模型）
-- Small/Fast：`ANTHROPIC_SMALL_FAST_MODEL=deepseek-chat`（后台小任务/标题生成走 haiku 档，映射到 DeepSeek 避免 404）
-- 各档位默认模型（FABLE/OPUS/SONNET/HAIKU）与 `CLAUDE_CODE_SUBAGENT_MODEL` 均映射到 `deepseek-chat`，避免切换时 model not found
+- Model：`deepseek-v4-pro`（**默认主力**，思考型旗舰）；小任务/后台用 `deepseek-chat`（V4 Flash，快且便宜）
+- Small/Fast：`ANTHROPIC_SMALL_FAST_MODEL=deepseek-chat`（后台小任务/标题生成走 haiku 档，用 Flash 避免 404 且省钱）
+- 各档位映射：FABLE/OPUS/SONNET 与 `CLAUDE_CODE_SUBAGENT_MODEL` → `deepseek-v4-pro`；HAIKU/SMALL_FAST → `deepseek-chat`
 - Key：DeepSeek 平台 key（`sk-...`），鉴权走 `ANTHROPIC_AUTH_TOKEN`；本用户体系里用 self key（CMS 字段 `DEEPSEEK_API_KEY`）
 - **Key 解析顺序**：`claude-switch.local.*` 里的显式覆盖 > ai-api-gateway 解锁文件（Windows `D:\server-ops\secrets\ai-gateway-secrets.env`；macOS/Linux `~/.config/ai-gateway/secrets.env`，可用 `AI_GATEWAY_SECRETS_PATH` 覆盖路径）里的 `DEEPSEEK_API_KEY`。默认不在本地文件写 key，加密解密统一走 ai-api-gateway CMS 流程
 
-> 与 Kimi 不同：DeepSeek 不需要 `CLAUDE_CODE_EFFORT_LEVEL`（思考与否由模型名决定：`deepseek-chat` 非思考、`deepseek-reasoner` 思考）；也不要强制 1M context（DeepSeek 端点按模型自报上下文）。
+> 与 Kimi 不同：DeepSeek 不需要 `CLAUDE_CODE_EFFORT_LEVEL`（思考与否由模型名决定：`deepseek-v4-pro` 思考、`deepseek-chat` 非思考）；也不要强制 1M context（DeepSeek 端点按模型自报上下文）。
 > 官方接入文档：[接入 Claude Code（DeepSeek API Docs）](https://api-docs.deepseek.com/zh-cn/quick_start/agent_integrations/claude_code/)
 
 ## 注意

@@ -23,7 +23,8 @@ $KimiKey           = ""   # 由 claude-switch.local.ps1 覆盖
 # ---- DeepSeek 套餐配置 ----
 # DeepSeek 官方 Anthropic 兼容端点（无需协议转换，直连即可）
 $DeepSeekBaseUrl   = "https://api.deepseek.com/anthropic"
-$DeepSeekModel     = "deepseek-chat"
+$DeepSeekModel     = "deepseek-v4-pro"   # 默认主力：V4 Pro（思考型旗舰）
+$DeepSeekFastModel = "deepseek-chat"     # 小任务/后台：V4 Flash（快、便宜）
 $DeepSeekKey       = ""   # 由 claude-switch.local.ps1 覆盖
 
 # 读取本地私密配置（含 key），存在才加载
@@ -90,11 +91,11 @@ function _UseDeepSeek {
     $env:ANTHROPIC_BASE_URL               = $DeepSeekBaseUrl
     $env:ANTHROPIC_AUTH_TOKEN             = $dsKey
     $env:ANTHROPIC_MODEL                  = $DeepSeekModel
-    $env:ANTHROPIC_SMALL_FAST_MODEL       = $DeepSeekModel   # 后台小任务（haiku 档）也映射到 DeepSeek，避免 404
+    $env:ANTHROPIC_SMALL_FAST_MODEL       = $DeepSeekFastModel   # 后台小任务走 Flash，避免 404 且省钱
     $env:ANTHROPIC_DEFAULT_FABLE_MODEL    = $DeepSeekModel
     $env:ANTHROPIC_DEFAULT_OPUS_MODEL     = $DeepSeekModel
     $env:ANTHROPIC_DEFAULT_SONNET_MODEL   = $DeepSeekModel
-    $env:ANTHROPIC_DEFAULT_HAIKU_MODEL    = $DeepSeekModel
+    $env:ANTHROPIC_DEFAULT_HAIKU_MODEL    = $DeepSeekFastModel
     $env:CLAUDE_CODE_SUBAGENT_MODEL       = $DeepSeekModel
     return $true
 }
