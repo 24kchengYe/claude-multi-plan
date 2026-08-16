@@ -49,14 +49,25 @@ function _UseClaude {
 }
 
 # 切到 Kimi 套餐（仅当前窗口）
+# Key 解析顺序：claude-switch.local.ps1 里的 $KimiKey 显式覆盖 > ai-api-gateway 解锁文件
+# （默认 D:\server-ops\secrets\ai-gateway-secrets.env，可用 $env:AI_GATEWAY_SECRETS_PATH 覆盖）里的 KIMI_CODE_API_KEY
 function _UseKimi {
-    if ([string]::IsNullOrEmpty($KimiKey)) {
-        Write-Host "[claude-switch] 未配置 Kimi key。请在 claude-switch.local.ps1 里设置 `$KimiKey。" -ForegroundColor Yellow
+    $kmKey = $KimiKey
+    if ([string]::IsNullOrEmpty($kmKey)) {
+        $store = $env:AI_GATEWAY_SECRETS_PATH
+        if ([string]::IsNullOrEmpty($store)) { $store = 'D:\server-ops\secrets\ai-gateway-secrets.env' }
+        if (Test-Path -LiteralPath $store) {
+            $m = Get-Content -LiteralPath $store | Where-Object { $_ -match '^KIMI_CODE_API_KEY=(.+)$' } | Select-Object -Last 1
+            if ($m) { $kmKey = ($m -split '=',2)[1].Trim() }
+        }
+    }
+    if ([string]::IsNullOrEmpty($kmKey)) {
+        Write-Host "[claude-switch] 未配置 Kimi key。请解锁 ai-api-gateway（ai-gateway-secrets.env 含 KIMI_CODE_API_KEY）或在 claude-switch.local.ps1 里设置 `$KimiKey。" -ForegroundColor Yellow
         return $false
     }
     Remove-Item Env:ANTHROPIC_API_KEY -ErrorAction SilentlyContinue
     $env:ANTHROPIC_BASE_URL               = $KimiBaseUrl
-    $env:ANTHROPIC_AUTH_TOKEN             = $KimiKey
+    $env:ANTHROPIC_AUTH_TOKEN             = $kmKey
     $env:ANTHROPIC_MODEL                  = $KimiModel
     $env:CLAUDE_CODE_EFFORT_LEVEL         = "high"
     $env:ANTHROPIC_DEFAULT_FABLE_MODEL    = $KimiModel

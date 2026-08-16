@@ -160,7 +160,7 @@ cp ~/.claude/skills/claude-multi-plan/claude-code-router.custom-router.aiden.js 
 | Model | `k3[1m]`（Kimi K3，最高 1M 上下文） |
 | Context | `CLAUDE_CODE_AUTO_COMPACT_WINDOW=1048576`、`CLAUDE_CODE_MAX_CONTEXT_TOKENS=1048576` |
 | Effort | `CLAUDE_CODE_EFFORT_LEVEL=high`（必须保持 thinking 开启，否则 K3 请求会被路由到 K2.6） |
-| Key | 在 [kimi.com/code](https://www.kimi.com/code) 的 Console 生成，格式 `sk-kimi-...` |
+| Key | 在 [kimi.com/code](https://www.kimi.com/code) 的 Console 生成，格式 `sk-kimi-...`。默认从 ai-api-gateway 解锁文件（Win `D:\server-ops\secrets\ai-gateway-secrets.env` / Mac `~/.config/ai-gateway/secrets.env`）读 `KIMI_CODE_API_KEY`；`claude-switch.local.*` 只作显式覆盖 |
 
 > `k3[1m]` 需要 Allegretto 或更高会员档位；Moderato 可使用 `k3`，上下文上限为 256K。脚本已默认设置 `CLAUDE_CODE_EFFORT_LEVEL=high` 来保持 thinking 开启；若关闭，K3 请求会被后端路由到 K2.6。切换到 K3 后建议新开会话。
 

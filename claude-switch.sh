@@ -54,15 +54,24 @@ _use_claude() {
 }
 
 # 切到 Kimi 套餐（仅当前 shell）
+# Key 解析顺序：claude-switch.local.sh 里的 KIMI_KEY 显式覆盖 > ai-api-gateway 解锁文件
+# （默认 ~/.config/ai-gateway/secrets.env，可用 AI_GATEWAY_SECRETS_PATH 覆盖）里的 KIMI_CODE_API_KEY
 _use_kimi() {
-    if [ -z "$KIMI_KEY" ]; then
-        echo "[claude-switch] 未配置 Kimi key。请在 claude-switch.local.sh 里设置 KIMI_KEY。" >&2
+    local km_key="$KIMI_KEY"
+    if [ -z "$km_key" ]; then
+        local store="${AI_GATEWAY_SECRETS_PATH:-$HOME/.config/ai-gateway/secrets.env}"
+        if [ -f "$store" ]; then
+            km_key="$(grep -E '^KIMI_CODE_API_KEY=.+$' "$store" | tail -n 1 | cut -d= -f2-)"
+        fi
+    fi
+    if [ -z "$km_key" ]; then
+        echo "[claude-switch] 未配置 Kimi key。请解锁 ai-api-gateway（secrets.env 含 KIMI_CODE_API_KEY）或在 claude-switch.local.sh 里设置 KIMI_KEY。" >&2
         return 1
     fi
     # 先清掉旧的 API key，避免和 AUTH_TOKEN 冲突
     unset ANTHROPIC_API_KEY
     export ANTHROPIC_BASE_URL="$KIMI_BASE_URL"
-    export ANTHROPIC_AUTH_TOKEN="$KIMI_KEY"
+    export ANTHROPIC_AUTH_TOKEN="$km_key"
     export ANTHROPIC_MODEL="$KIMI_MODEL"
     export CLAUDE_CODE_EFFORT_LEVEL="high"
     export ANTHROPIC_DEFAULT_FABLE_MODEL="$KIMI_MODEL"

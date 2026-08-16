@@ -1,6 +1,5 @@
-# 复制本文件为 claude-switch.local.ps1，填入你自己的 Kimi Code key。
-# claude-switch.local.ps1 已被 .gitignore 排除，不会上传。
-$KimiKey = "sk-kimi-在这里填你的KimiCodeKey"
-# DeepSeek key 默认从 ai-api-gateway 解锁文件读取（D:\server-ops\secrets\ai-gateway-secrets.env 的 DEEPSEEK_API_KEY），
-# 无需写在这里；如需显式覆盖（例如用另一枚 key）再取消注释：
+# 复制本文件为 claude-switch.local.ps1。本文件默认可以为空：
+# Kimi 与 DeepSeek key 都从 ai-api-gateway 解锁文件读取（D:\server-ops\secrets\ai-gateway-secrets.env
+# 的 KIMI_CODE_API_KEY / DEEPSEEK_API_KEY）。如需显式覆盖（例如用另一枚 key）再取消注释：
+# $KimiKey = "sk-kimi-在这里填你的KimiCodeKey"
 # $DeepSeekKey = "sk-在这里填你的DeepSeekKey"
