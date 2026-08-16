@@ -14,12 +14,14 @@
 | `ccclaude` | 官方登录 | 普通确认 | **任何电脑** |
 | `cckm` | Kimi 套餐 | 允许所有操作 | **任何电脑** |
 | `cckimi` | Kimi 套餐 | 普通确认 | **任何电脑** |
+| `ccds` | DeepSeek 套餐 | 允许所有操作 | **任何电脑** |
+| `ccdeepseek` | DeepSeek 套餐 | 普通确认 | **任何电脑** |
 | `ta` | TRAE CLI（字节内部） | 允许所有操作（`--permission-mode bypass_permissions`） | 仅字节内网 + 已认证 |
 | `trae` | TRAE CLI（字节内部） | 普通模式 | 仅字节内网 + 已认证 |
 | `ccta` | Claude Code × TRAE 内部模型 | 允许所有操作；cc 跑在内部模型上（经 claude-code-router 反代） | 仅字节内网 + 已认证 |
 | `ccta-aiden` / `ccad` | Claude Code × Aiden AIProxy | 允许所有操作；cc 跑在 Aiden 内部模型上（经 CCR + aiden-proxy 双桥） | 仅字节内网 + 已认证 |
 
-> **核心原则**：`codex` / `codexsafe` / `cc` / `cckm` 在**任何电脑**可用；`ta` / `trae` / `ccta` / `ccta-aiden` 是字节内部能力，需**内网 + 认证 ByteDance**。
+> **核心原则**：`codex` / `codexsafe` / `cc` / `cckm` / `ccds` 在**任何电脑**可用；`ta` / `trae` / `ccta` / `ccta-aiden` 是字节内部能力，需**内网 + 认证 ByteDance**。
 
 ## 原理
 
@@ -69,12 +71,12 @@ powershell -ExecutionPolicy Bypass -File install.ps1         # Windows PowerShel
 
 | 命令 | 任何电脑 | 需字节内网 | 需认证 ByteDance |
 |------|:---:|:---:|:---:|
-| `cc` / `ccclaude` / `cckm` / `cckimi` | ✅ | 否 | 否 |
+| `cc` / `ccclaude` / `cckm` / `cckimi` / `ccds` / `ccdeepseek` | ✅ | 否 | 否 |
 | `ta` / `trae` | 仅字节环境 | 是 | 是（traecli） |
 | `ccta` | 仅字节环境 | 是 | 是（traecli） |
 | `ccta-aiden` / `ccad` | 仅字节环境 | 是 | 是（aiden） |
 
-> 纯私人电脑、连不上内网/VPN → 只有 `cc`/`cckm` 能用。
+> 纯私人电脑、连不上内网/VPN → 只有 `cc`/`cckm`/`ccds` 能用。
 
 ### `ta` / `trae` — TRAE CLI 启动模式
 
@@ -163,15 +165,28 @@ cp ~/.claude/skills/claude-multi-plan/claude-code-router.custom-router.aiden.js 
 
 > ⚠️ **别用错端点**：`api.kimi.com/coding` 是 Kimi Code **订阅套餐**端点（`sk-kimi-` key）；`api.moonshot.cn/anthropic` 是 Moonshot **按量付费 API** 端点（platform key）。两套 key 不通用，用错会一直返回 401 / Claude Code 卡在 retry。
 
+## DeepSeek 套餐接入参数
+
+| 项目 | 值 |
+|------|----|
+| Base URL | `https://api.deepseek.com/anthropic`（DeepSeek 官方 Anthropic 兼容端点，**无需 CCR 反代**，直连即可） |
+| Model | `deepseek-chat`（默认）；cc 里 `/model` 可切 `deepseek-reasoner`（思考模型） |
+| Small/Fast | `ANTHROPIC_SMALL_FAST_MODEL=deepseek-chat`（后台小任务走 haiku 档，映射到 DeepSeek 避免 404） |
+| 档位映射 | FABLE/OPUS/SONNET/HAIKU 与 `CLAUDE_CODE_SUBAGENT_MODEL` 均映射 `deepseek-chat` |
+| Key | DeepSeek 平台 key（`sk-...`），鉴权走 `ANTHROPIC_AUTH_TOKEN` |
+
+> 与 Kimi 不同：**不需要** `CLAUDE_CODE_EFFORT_LEVEL`（思考与否由模型名决定：`deepseek-chat` 非思考、`deepseek-reasoner` 思考），也**不要**强制 1M context（DeepSeek 端点按模型自报上下文）。
+> 官方接入文档：[接入 Claude Code（DeepSeek API Docs）](https://api-docs.deepseek.com/zh-cn/quick_start/agent_integrations/claude_code/)
+
 ## 安全
 
 - **key 绝不入库**：`claude-switch.local.ps1` / `claude-switch.local.sh` 已被 `.gitignore` 排除，仓库里只有 `.example` 模板。
-- 公开过的 key 视为泄露，请到 Kimi Console 立即 revoke 并重置。
+- 公开过的 key 视为泄露，请到对应平台 Console（Kimi / DeepSeek）立即 revoke 并重置。
 
 ## 已知坑
 
 - **PowerShell 5.1 乱码**：PS 5.1 默认按 GBK 读脚本，含中文的 `.ps1` 必须存为 **UTF-8 BOM**，否则注释里的中文会破坏字符串解析。本仓库的 `.ps1` 已带 BOM。
-- **代理**：国内走 Kimi 端点（`api.kimi.com`），若开了全局代理，建议在 `NO_PROXY`/`no_proxy` 里加 `.kimi.com`，让它直连不走代理，否则 `cckm` 可能卡在 retry。
+- **代理**：国内走 Kimi 端点（`api.kimi.com`），若开了全局代理，建议在 `NO_PROXY`/`no_proxy` 里加 `.kimi.com`，让它直连不走代理，否则 `cckm` 可能卡在 retry。DeepSeek 端点（`api.deepseek.com`）同理，直连即可，`ccds` 遇 retry 时加 `.deepseek.com`。
 - **端点用错会一直 401**：症状是 Claude Code 卡在 `Retrying... attempt N/10`。先 `curl` 直打 `https://api.kimi.com/coding/v1/messages` 验证 key 是否返回 200，再排查别的。
 - **跨平台 shell**：
   - macOS 默认 **zsh**，`install.sh` 会自动注入 `~/.zshrc`；脚本对 zsh/bash 定位自身目录的差异已做兼容。

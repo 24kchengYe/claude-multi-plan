@@ -1,3 +1,6 @@
 # 私密 key 文件，绝不上传
 claude-switch.local.ps1
 claude-switch.local.sh
+# 备份/历史副本同样含 key，一律排除
+claude-switch.local.*.bak-*
+claude-switch.local.*~

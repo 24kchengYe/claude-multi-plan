@@ -1,6 +1,6 @@
 ---
 name: claude-multi-plan
-description: 在任意终端（PowerShell/Git Bash/WSL）用快捷命令在 Claude 官方套餐与 Kimi 套餐之间切换运行 Claude Code，互不影响登录态；并提供字节内部链路快捷命令（ta/trae=TRAE CLI、ccta=Trae CN 网关、ccta-aiden/ccad=Aiden AIProxy）。当用户想配置多套餐切换、在不同设备复用同样配置、或问 cc/cckm/cckimi/ta/trae/ccta/ccta-aiden 之类命令时使用。
+description: 在任意终端（PowerShell/Git Bash/WSL）用快捷命令在 Claude 官方套餐、Kimi 套餐与 DeepSeek 套餐之间切换运行 Claude Code，互不影响登录态；并提供字节内部链路快捷命令（ta/trae=TRAE CLI、ccta=Trae CN 网关、ccta-aiden/ccad=Aiden AIProxy）。当用户想配置多套餐切换、在不同设备复用同样配置、或问 cc/cckm/cckimi/ccds/ta/trae/ccta/ccta-aiden 之类命令时使用。
 ---
 
 # claude-multi-plan
@@ -17,6 +17,8 @@ description: 在任意终端（PowerShell/Git Bash/WSL）用快捷命令在 Clau
 | `ccclaude` | 官方登录 | 普通确认 |
 | `cckm` | Kimi 套餐 | 允许所有操作 |
 | `cckimi` | Kimi 套餐 | 普通确认 |
+| `ccds` | DeepSeek 套餐 | 允许所有操作 |
+| `ccdeepseek` | DeepSeek 套餐 | 普通确认 |
 | `ta` | TRAE CLI | 允许所有操作（--permission-mode bypass_permissions） |
 | `trae` | TRAE CLI | 普通模式（默认 Agent 模式，按需审批） |
 | `ccta` | Claude Code × Trae CN 网关 | 允许所有操作；cc 跑在 Trae CN 内部模型上（经 CCR 反代） |
@@ -216,7 +218,7 @@ cp ~/.claude/skills/claude-multi-plan/claude-code-router.custom-router.aiden.js 
 
 > ⚠️ **不要手动拷贝 `~/.trae-cn/trae-jwt-token`**：它约 24h 过期、且按用户/机器签发。每台新机器重新 `traecli` 登录即可。
 > 仓库里无密钥（配置示例用 `$TRAE_CN_JWT` / `sk_matthew` 插值，JWT 由运行时本地注入），可放心 clone 到任何机器。
-> 纯私人电脑、连不上内网/VPN → `ta`/`trae`/`ccta`/`ccta-aiden` 都用不了，那台机器上只有 `cc`/`cckm` 能用。
+> 纯私人电脑、连不上内网/VPN → `ta`/`trae`/`ccta`/`ccta-aiden` 都用不了，那台机器上只有 `cc`/`cckm`/`ccds` 能用。
 
 ## Kimi 套餐接入参数
 
@@ -230,6 +232,17 @@ cp ~/.claude/skills/claude-multi-plan/claude-code-router.custom-router.aiden.js 
 
 > ⚠️ 注意区分两套端点：`api.kimi.com/coding` 是 **Kimi Code 订阅套餐**端点（`sk-kimi` key）；
 > `api.moonshot.cn/anthropic` 是 **Moonshot 按量付费 API** 端点（platform key）。两者 key 不通用，用错会一直 401。
+
+## DeepSeek 套餐接入参数
+
+- Base URL：`https://api.deepseek.com/anthropic`（DeepSeek **官方 Anthropic 兼容端点**，无需 CCR 反代，直连即可）
+- Model：`deepseek-chat`（默认）；cc 里可用 `/model` 换成 `deepseek-reasoner`（思考模型）
+- Small/Fast：`ANTHROPIC_SMALL_FAST_MODEL=deepseek-chat`（后台小任务/标题生成走 haiku 档，映射到 DeepSeek 避免 404）
+- 各档位默认模型（FABLE/OPUS/SONNET/HAIKU）与 `CLAUDE_CODE_SUBAGENT_MODEL` 均映射到 `deepseek-chat`，避免切换时 model not found
+- Key：DeepSeek 平台 key（`sk-...`），鉴权走 `ANTHROPIC_AUTH_TOKEN`；本用户体系里用 self key（CMS 字段 `DEEPSEEK_API_KEY`）
+
+> 与 Kimi 不同：DeepSeek 不需要 `CLAUDE_CODE_EFFORT_LEVEL`（思考与否由模型名决定：`deepseek-chat` 非思考、`deepseek-reasoner` 思考）；也不要强制 1M context（DeepSeek 端点按模型自报上下文）。
+> 官方接入文档：[接入 Claude Code（DeepSeek API Docs）](https://api-docs.deepseek.com/zh-cn/quick_start/agent_integrations/claude_code/)
 
 ## 注意
 

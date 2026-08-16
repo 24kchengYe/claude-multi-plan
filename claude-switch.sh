@@ -11,6 +11,8 @@
 #   ccclaude   -> 官方登录 + 普通
 #   cckm       -> Kimi 套餐 + 允许所有操作
 #   cckimi     -> Kimi 套餐 + 普通
+#   ccds       -> DeepSeek 套餐 + 允许所有操作
+#   ccdeepseek -> DeepSeek 套餐 + 普通
 #   ta         -> TRAE CLI + 允许所有操作（bypass_permissions）
 #   trae       -> TRAE CLI 普通模式
 
@@ -20,6 +22,12 @@ KIMI_BASE_URL="https://api.kimi.com/coding/"
 KIMI_MODEL="k3[1m]"
 KIMI_CONTEXT_TOKENS="1048576"
 KIMI_KEY=""   # 由 claude-switch.local.sh 覆盖
+
+# ---- DeepSeek 套餐配置 ----
+# DeepSeek 官方 Anthropic 兼容端点（无需协议转换，直连即可）
+DEEPSEEK_BASE_URL="https://api.deepseek.com/anthropic"
+DEEPSEEK_MODEL="deepseek-chat"
+DEEPSEEK_KEY=""   # 由 claude-switch.local.sh 覆盖
 
 # 读取本地私密配置（含 key），存在才加载
 # 兼容 bash（BASH_SOURCE）与 zsh（%x），定位本脚本所在目录
@@ -39,6 +47,7 @@ _use_claude() {
     unset ANTHROPIC_BASE_URL ANTHROPIC_AUTH_TOKEN ANTHROPIC_MODEL \
           ANTHROPIC_DEFAULT_FABLE_MODEL ANTHROPIC_DEFAULT_OPUS_MODEL \
           ANTHROPIC_DEFAULT_SONNET_MODEL ANTHROPIC_DEFAULT_HAIKU_MODEL \
+          ANTHROPIC_SMALL_FAST_MODEL \
           CLAUDE_CODE_SUBAGENT_MODEL CLAUDE_CODE_AUTO_COMPACT_WINDOW \
           CLAUDE_CODE_MAX_CONTEXT_TOKENS CLAUDE_CODE_EFFORT_LEVEL ANTHROPIC_API_KEY
 }
@@ -64,8 +73,27 @@ _use_kimi() {
     export CLAUDE_CODE_MAX_CONTEXT_TOKENS="$KIMI_CONTEXT_TOKENS"
 }
 
+# 切到 DeepSeek 套餐（仅当前 shell）
+# DeepSeek 端点原生兼容 Anthropic 协议，无需 CCR 反代；先清场再设变量，避免与 cckm 等残留串味
+_use_deepseek() {
+    if [ -z "$DEEPSEEK_KEY" ]; then
+        echo "[claude-switch] 未配置 DeepSeek key。请在 claude-switch.local.sh 里设置 DEEPSEEK_KEY。" >&2
+        return 1
+    fi
+    _use_claude
+    export ANTHROPIC_BASE_URL="$DEEPSEEK_BASE_URL"
+    export ANTHROPIC_AUTH_TOKEN="$DEEPSEEK_KEY"
+    export ANTHROPIC_MODEL="$DEEPSEEK_MODEL"
+    export ANTHROPIC_SMALL_FAST_MODEL="$DEEPSEEK_MODEL"   # 后台小任务（haiku 档）也映射到 DeepSeek，避免 404
+    export ANTHROPIC_DEFAULT_FABLE_MODEL="$DEEPSEEK_MODEL"
+    export ANTHROPIC_DEFAULT_OPUS_MODEL="$DEEPSEEK_MODEL"
+    export ANTHROPIC_DEFAULT_SONNET_MODEL="$DEEPSEEK_MODEL"
+    export ANTHROPIC_DEFAULT_HAIKU_MODEL="$DEEPSEEK_MODEL"
+    export CLAUDE_CODE_SUBAGENT_MODEL="$DEEPSEEK_MODEL"
+}
+
 # 先解除可能存在的同名 alias，避免函数定义语法冲突
-unalias cc cccc ccclaude cckm cckimi 2>/dev/null || true
+unalias cc cccc ccclaude cckm cckimi ccds ccdeepseek 2>/dev/null || true
 
 # 官方 + 允许所有操作
 cc()   { _use_claude; claude --dangerously-skip-permissions "$@"; }
@@ -76,6 +104,10 @@ ccclaude() { _use_claude; claude "$@"; }
 cckm() { _use_kimi && claude --dangerously-skip-permissions "$@"; }
 # Kimi 套餐 + 普通
 cckimi() { _use_kimi && claude "$@"; }
+# DeepSeek 套餐 + 允许所有操作
+ccds() { _use_deepseek && claude --dangerously-skip-permissions "$@"; }
+# DeepSeek 套餐 + 普通
+ccdeepseek() { _use_deepseek && claude "$@"; }
 
 # ---- TRAE CLI 启动模式（traecli/traex，仅 mac/linux）----
 # traex/traecli 装在 ~/.local/bin，ccr/node 装在 ~/.local/bin/node/bin，确保都在 PATH 上

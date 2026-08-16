@@ -1,3 +1,5 @@
 # 复制本文件为 claude-switch.local.ps1，填入你自己的 Kimi Code key。
 # claude-switch.local.ps1 已被 .gitignore 排除，不会上传。
 $KimiKey = "sk-kimi-在这里填你的KimiCodeKey"
+# DeepSeek 官方平台 key（ccds/ccdeepseek 用；platform key，格式 sk-...）
+$DeepSeekKey = "sk-在这里填你的DeepSeekKey"
