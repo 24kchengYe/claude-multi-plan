@@ -139,15 +139,16 @@ _cms_field() {
     grep -E "^$1=.+$" "$(_cms_store)" 2>/dev/null | tail -n 1 | cut -d= -f2- | tr -d '\r'
 }
 _codex_backend() {
-    # $1=home suffix, $2=model, $3=base_url, $4=env_key(config), $5=provider, $6=store field, $7=env var name, $8=extra TOML
-    local suffix="$1" model="$2" base_url="$3" env_key_cfg="$4" provider="$5" store_field="$6" env_name="$7" extra_cfg="$8"
-    shift 8
-    local key home
+    # $1=home suffix, $2=model, $3=base_url, $4=env_key(config), $5=provider, $6=store field, $7=env var name, $8=extra TOML, $9=web_search mode
+    local suffix="$1" model="$2" base_url="$3" env_key_cfg="$4" provider="$5" store_field="$6" env_name="$7" extra_cfg="$8" web_mode="$9"
+    shift 9
+    local key home web_line
     key="$(_cms_field "$store_field")"
     if [ -z "$key" ]; then
         echo "[claude-switch] 未找到 $store_field（请先解锁 ai-api-gateway）" >&2
         return 1
     fi
+    [ -n "$web_mode" ] && web_line="web_search = \"$web_mode\"" || web_line=""
     home="$HOME/.codex-$suffix"
     mkdir -p "$home"
     cat > "$home/config.toml" <<EOF
@@ -159,20 +160,24 @@ name = "$provider"
 base_url = "$base_url"
 env_key = "$env_key_cfg"
 wire_api = "responses"
+$web_line
 $extra_cfg
 EOF
     if [ "$1" = "exec" ]; then
         # exec 分支：-c 强制覆盖，防止当前目录的项目级 .codex/config.toml 盖掉后端配置
         shift
-        env "$env_name"="$key" CODEX_HOME="$home" command codex exec --dangerously-bypass-approvals-and-sandbox -c "model=$model" -c "model_provider=$provider" "$@"
+        if [ -n "$web_mode" ]; then
+            env "$env_name"="$key" CODEX_HOME="$home" command codex exec --dangerously-bypass-approvals-and-sandbox -c "model=$model" -c "model_provider=$provider" -c "web_search=$web_mode" "$@"
+        else
+            env "$env_name"="$key" CODEX_HOME="$home" command codex exec --dangerously-bypass-approvals-and-sandbox -c "model=$model" -c "model_provider=$provider" "$@"
+        fi
     else
         env "$env_name"="$key" CODEX_HOME="$home" codex "$@"
     fi
 }
 cdx()  { codex "$@"; }
-cdds() { _codex_backend deepseek 'deepseek-v4-pro' 'https://api.deepseek.com/v1' DEEPSEEK_API_KEY deepseek DEEPSEEK_API_KEY DEEPSEEK_API_KEY '' "$@"; }
-cdkm() { _codex_backend kimi 'k3' 'https://api.kimi.com/coding/v1' KIMI_API_KEY kimi KIMI_CODE_API_KEY KIMI_API_KEY '[tools.web_search]
-enabled = false' "$@"; }
+cdds() { _codex_backend deepseek 'deepseek-v4-pro' 'https://api.deepseek.com/v1' DEEPSEEK_API_KEY deepseek DEEPSEEK_API_KEY DEEPSEEK_API_KEY '' '' "$@"; }
+cdkm() { _codex_backend kimi 'k3' 'https://api.kimi.com/coding/v1' KIMI_API_KEY kimi KIMI_CODE_API_KEY KIMI_API_KEY '' 'disabled' "$@"; }
 
 # ---- TRAE CLI 启动模式（traecli/traex，仅 mac/linux）----
 # traex/traecli 装在 ~/.local/bin，ccr/node 装在 ~/.local/bin/node/bin，确保都在 PATH 上

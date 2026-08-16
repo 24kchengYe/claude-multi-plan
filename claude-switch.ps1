@@ -153,9 +153,11 @@ function _ReadStoreField {
 }
 
 function _CodexBackendHome {
-    param([string]$Name, [string]$Model, [string]$BaseUrl, [string]$EnvKey, [string]$Provider, [string]$ExtraCfg = '')
+    param([string]$Name, [string]$Model, [string]$BaseUrl, [string]$EnvKey, [string]$Provider, [string]$ExtraCfg = '', [string]$WebMode = '')
     $codexHome = Join-Path $env:USERPROFILE ('.codex-' + $Name)
     New-Item -ItemType Directory -Force $codexHome | Out-Null
+    $webLine = ''
+    if ($WebMode) { $webLine = 'web_search = "' + $WebMode + '"' }
     $cfg = @"
 model = "$Model"
 model_provider = "$Provider"
@@ -165,6 +167,7 @@ name = "$Provider"
 base_url = "$BaseUrl"
 env_key = "$EnvKey"
 wire_api = "responses"
+$webLine
 $ExtraCfg
 "@
     Set-Content -LiteralPath (Join-Path $codexHome 'config.toml') -Value $cfg -Encoding ascii
@@ -172,13 +175,13 @@ $ExtraCfg
 }
 
 function _RunCodexBackend {
-    param([string]$HomeSuffix, [string]$Model, [string]$BaseUrl, [string]$EnvKey, [string]$Provider, [string]$StoreField, [string]$ExtraCfg = '')
+    param([string]$HomeSuffix, [string]$Model, [string]$BaseUrl, [string]$EnvKey, [string]$Provider, [string]$StoreField, [string]$ExtraCfg = '', [string]$WebMode = '')
     $key = _ReadStoreField $StoreField
     if (-not $key) {
         Write-Host ("[claude-switch] 未找到 " + $StoreField + "（请先解锁 ai-api-gateway）") -ForegroundColor Yellow
         return
     }
-    $codexHome = _CodexBackendHome $HomeSuffix $Model $BaseUrl $EnvKey $Provider $ExtraCfg
+    $codexHome = _CodexBackendHome $HomeSuffix $Model $BaseUrl $EnvKey $Provider $ExtraCfg $WebMode
     $prevHome = $env:CODEX_HOME
     $prevKey = [Environment]::GetEnvironmentVariable($EnvKey, 'Process')
     try {
@@ -189,7 +192,9 @@ function _RunCodexBackend {
             # exec 分支：-c 强制覆盖，防止当前目录的项目级 .codex/config.toml 盖掉后端配置
             $rest = @()
             if ($argList.Count -gt 1) { $rest = $argList[1..($argList.Count - 1)] }
-            & (_CodexBin) exec --dangerously-bypass-approvals-and-sandbox -c ("model=" + $Model) -c ("model_provider=" + $Provider) @rest
+            $extraC = @()
+            if ($WebMode) { $extraC = @('-c', ('web_search=' + $WebMode)) }
+            & (_CodexBin) exec --dangerously-bypass-approvals-and-sandbox -c ("model=" + $Model) -c ("model_provider=" + $Provider) @extraC @rest
         } else {
             codex @args
         }
@@ -201,4 +206,4 @@ function _RunCodexBackend {
 
 function cdx  { codex @args }
 function cdds { _RunCodexBackend 'deepseek' 'deepseek-v4-pro' 'https://api.deepseek.com/v1' 'DEEPSEEK_API_KEY' 'deepseek' 'DEEPSEEK_API_KEY' }
-function cdkm { _RunCodexBackend 'kimi' 'k3' 'https://api.kimi.com/coding/v1' 'KIMI_API_KEY' 'kimi' 'KIMI_CODE_API_KEY' "[tools.web_search]`nenabled = false" }
+function cdkm { _RunCodexBackend 'kimi' 'k3' 'https://api.kimi.com/coding/v1' 'KIMI_API_KEY' 'kimi' 'KIMI_CODE_API_KEY' '' 'disabled' }
