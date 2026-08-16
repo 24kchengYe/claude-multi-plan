@@ -153,7 +153,7 @@ function _ReadStoreField {
 }
 
 function _CodexBackendHome {
-    param([string]$Name, [string]$Model, [string]$BaseUrl, [string]$EnvKey, [string]$Provider, [string]$ExtraCfg = '', [string]$WebMode = '')
+    param([string]$Name, [string]$Model, [string]$BaseUrl, [string]$EnvKey, [string]$Provider, [string]$ExtraCfg = '', [string]$WebMode = '', [int]$ContextWindow = 262144)
     $codexHome = Join-Path $env:USERPROFILE ('.codex-' + $Name)
     New-Item -ItemType Directory -Force $codexHome | Out-Null
     # 从主 CODEX_HOME 播种沙箱注册状态，跳过首次运行的 Windows 沙箱设置提示。
@@ -166,6 +166,7 @@ function _CodexBackendHome {
     }
     $webLine = ''
     if ($WebMode) { $webLine = 'web_search = "' + $WebMode + '"' }
+    $compactLimit = [int]($ContextWindow * 0.8)
     $cfg = @"
 model = "$Model"
 model_provider = "$Provider"
@@ -177,6 +178,8 @@ env_key = "$EnvKey"
 wire_api = "responses"
 $webLine
 $ExtraCfg
+model_context_window = $ContextWindow
+model_auto_compact_token_limit = $compactLimit
 
 [windows]
 sandbox = "elevated"
@@ -186,13 +189,13 @@ sandbox = "elevated"
 }
 
 function _RunCodexBackend {
-    param([string]$HomeSuffix, [string]$Model, [string]$BaseUrl, [string]$EnvKey, [string]$Provider, [string]$StoreField, [string]$ExtraCfg = '', [string]$WebMode = '')
+    param([string]$HomeSuffix, [string]$Model, [string]$BaseUrl, [string]$EnvKey, [string]$Provider, [string]$StoreField, [string]$ExtraCfg = '', [string]$WebMode = '', [int]$ContextWindow = 262144)
     $key = _ReadStoreField $StoreField
     if (-not $key) {
         Write-Host ("[claude-switch] 未找到 " + $StoreField + "（请先解锁 ai-api-gateway）") -ForegroundColor Yellow
         return
     }
-    $codexHome = _CodexBackendHome $HomeSuffix $Model $BaseUrl $EnvKey $Provider $ExtraCfg $WebMode
+    $codexHome = _CodexBackendHome $HomeSuffix $Model $BaseUrl $EnvKey $Provider $ExtraCfg $WebMode $ContextWindow
     $prevHome = $env:CODEX_HOME
     $prevKey = [Environment]::GetEnvironmentVariable($EnvKey, 'Process')
     try {
@@ -218,5 +221,5 @@ function _RunCodexBackend {
 }
 
 function cdx  { codex @args }
-function cdds { _RunCodexBackend 'deepseek' 'deepseek-v4-pro' 'https://api.deepseek.com/v1' 'DEEPSEEK_API_KEY' 'deepseek' 'DEEPSEEK_API_KEY' }
-function cdkm { _RunCodexBackend 'kimi' 'k3' 'https://api.kimi.com/coding/v1' 'KIMI_API_KEY' 'kimi' 'KIMI_CODE_API_KEY' '' 'disabled' }
+function cdds { _RunCodexBackend 'deepseek' 'deepseek-v4-pro' 'https://api.deepseek.com/v1' 'DEEPSEEK_API_KEY' 'deepseek' 'DEEPSEEK_API_KEY' '' '' 1048576 }
+function cdkm { _RunCodexBackend 'kimi' 'k3' 'https://api.kimi.com/coding/v1' 'KIMI_API_KEY' 'kimi' 'KIMI_CODE_API_KEY' '' 'disabled' 262144 }

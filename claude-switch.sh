@@ -139,16 +139,17 @@ _cms_field() {
     grep -E "^$1=.+$" "$(_cms_store)" 2>/dev/null | tail -n 1 | cut -d= -f2- | tr -d '\r'
 }
 _codex_backend() {
-    # $1=home suffix, $2=model, $3=base_url, $4=env_key(config), $5=provider, $6=store field, $7=env var name, $8=extra TOML, $9=web_search mode
-    local suffix="$1" model="$2" base_url="$3" env_key_cfg="$4" provider="$5" store_field="$6" env_name="$7" extra_cfg="$8" web_mode="$9"
-    shift 9
-    local key home web_line
+    # $1=home suffix, $2=model, $3=base_url, $4=env_key(config), $5=provider, $6=store field, $7=env var name, $8=extra TOML, $9=web_search mode, $10=context window
+    local suffix="$1" model="$2" base_url="$3" env_key_cfg="$4" provider="$5" store_field="$6" env_name="$7" extra_cfg="$8" web_mode="$9" ctx="${10:-262144}"
+    shift 10
+    local key home web_line compact_limit
     key="$(_cms_field "$store_field")"
     if [ -z "$key" ]; then
         echo "[claude-switch] 未找到 $store_field（请先解锁 ai-api-gateway）" >&2
         return 1
     fi
     [ -n "$web_mode" ] && web_line="web_search = \"$web_mode\"" || web_line=""
+    compact_limit=$((ctx * 80 / 100))
     home="$HOME/.codex-$suffix"
     mkdir -p "$home"
     # 从主 CODEX_HOME 播种沙箱注册状态，跳过首次运行的 Windows 沙箱设置提示
@@ -169,6 +170,8 @@ env_key = "$env_key_cfg"
 wire_api = "responses"
 $web_line
 $extra_cfg
+model_context_window = $ctx
+model_auto_compact_token_limit = $compact_limit
 
 [windows]
 sandbox = "elevated"
@@ -190,8 +193,8 @@ EOF
     fi
 }
 cdx()  { codex "$@"; }
-cdds() { _codex_backend deepseek 'deepseek-v4-pro' 'https://api.deepseek.com/v1' DEEPSEEK_API_KEY deepseek DEEPSEEK_API_KEY DEEPSEEK_API_KEY '' '' "$@"; }
-cdkm() { _codex_backend kimi 'k3' 'https://api.kimi.com/coding/v1' KIMI_API_KEY kimi KIMI_CODE_API_KEY KIMI_API_KEY '' 'disabled' "$@"; }
+cdds() { _codex_backend deepseek 'deepseek-v4-pro' 'https://api.deepseek.com/v1' DEEPSEEK_API_KEY deepseek DEEPSEEK_API_KEY DEEPSEEK_API_KEY '' '' 1048576 "$@"; }
+cdkm() { _codex_backend kimi 'k3' 'https://api.kimi.com/coding/v1' KIMI_API_KEY kimi KIMI_CODE_API_KEY KIMI_API_KEY '' 'disabled' 262144 "$@"; }
 
 # ---- TRAE CLI 启动模式（traecli/traex，仅 mac/linux）----
 # traex/traecli 装在 ~/.local/bin，ccr/node 装在 ~/.local/bin/node/bin，确保都在 PATH 上
