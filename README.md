@@ -16,13 +16,15 @@
 | `cckimi` | Kimi 套餐 | 普通确认 | **任何电脑** |
 | `ccds` | DeepSeek 套餐 | 允许所有操作 | **任何电脑** |
 | `ccdeepseek` | DeepSeek 套餐 | 普通确认 | **任何电脑** |
-| `cdx` / `cdkm` / `cdds` | 全权限别名族 | = `codex` / `cckm` / `ccds`（`cd` 前缀=明确的全权限标记） | **任何电脑** |
+| `cdx` | Codex CLI × 当前 cc-switch 槽位 | 全权限 | **任何电脑** |
+| `cdds` | Codex CLI × DeepSeek（v4-pro，隔离 CODEX_HOME） | 全权限 | **任何电脑** |
+| `cdkm` | Codex CLI × Kimi（k3，隔离 CODEX_HOME） | 全权限 | **任何电脑** |
 | `ta` | TRAE CLI（字节内部） | 允许所有操作（`--permission-mode bypass_permissions`） | 仅字节内网 + 已认证 |
 | `trae` | TRAE CLI（字节内部） | 普通模式 | 仅字节内网 + 已认证 |
 | `ccta` | Claude Code × TRAE 内部模型 | 允许所有操作；cc 跑在内部模型上（经 claude-code-router 反代） | 仅字节内网 + 已认证 |
 | `ccta-aiden` / `ccad` | Claude Code × Aiden AIProxy | 允许所有操作；cc 跑在 Aiden 内部模型上（经 CCR + aiden-proxy 双桥） | 仅字节内网 + 已认证 |
 
-> **核心原则**：`codex` / `codexsafe` / `cc` / `cckm` / `ccds` 及 `cdx` / `cdkm` / `cdds` 别名族在**任何电脑**可用；`ta` / `trae` / `ccta` / `ccta-aiden` 是字节内部能力，需**内网 + 认证 ByteDance**。
+> **核心原则**：`codex` / `codexsafe` / `cc` / `cckm` / `ccds` 及 Codex 后端矩阵 `cdx` / `cdds` / `cdkm` 在**任何电脑**可用；`ta` / `trae` / `ccta` / `ccta-aiden` 是字节内部能力，需**内网 + 认证 ByteDance**。
 
 ## 原理
 

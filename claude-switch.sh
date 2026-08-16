@@ -128,11 +128,49 @@ ccds() { _use_deepseek && claude --dangerously-skip-permissions "$@"; }
 # DeepSeek 套餐 + 普通
 ccdeepseek() { _use_deepseek && claude "$@"; }
 
-# ---- cd* 全权限别名族（cd = dangerously 的明确标记；cd 本身被 shell 占用，Codex 用 cdx）----
+# ---- cd* = Codex CLI × 后端矩阵（全权限）----
+# cdx  = Codex × 当前 cc-switch 槽位
+# cdds = Codex × DeepSeek（deepseek-v4-pro，self key；隔离 CODEX_HOME=~/.codex-deepseek，不动 cc-switch 登录态）
+# cdkm = Codex × Kimi（k3，KIMI_CODE_API_KEY；隔离 CODEX_HOME=~/.codex-kimi）
+# key 均从 ai-api-gateway 解锁文件读取
 unalias cdx cdkm cdds 2>/dev/null || true
+_cms_store() { echo "${AI_GATEWAY_SECRETS_PATH:-$HOME/.config/ai-gateway/secrets.env}"; }
+_cms_field() {
+    grep -E "^$1=.+$" "$(_cms_store)" 2>/dev/null | tail -n 1 | cut -d= -f2-
+}
+_codex_backend() {
+    # $1=home suffix, $2=model, $3=base_url, $4=env_key(config), $5=provider, $6=store field, $7=env var name
+    local suffix="$1" model="$2" base_url="$3" env_key_cfg="$4" provider="$5" store_field="$6" env_name="$7"
+    shift 7
+    local key home
+    key="$(_cms_field "$store_field")"
+    if [ -z "$key" ]; then
+        echo "[claude-switch] 未找到 $store_field（请先解锁 ai-api-gateway）" >&2
+        return 1
+    fi
+    home="$HOME/.codex-$suffix"
+    mkdir -p "$home"
+    cat > "$home/config.toml" <<EOF
+model = "$model"
+model_provider = "$provider"
+
+[model_providers.$provider]
+name = "$provider"
+base_url = "$base_url"
+env_key = "$env_key_cfg"
+wire_api = "responses"
+EOF
+    if [ "$1" = "exec" ]; then
+        # exec 分支：-c 强制覆盖，防止当前目录的项目级 .codex/config.toml 盖掉后端配置
+        shift
+        env "$env_name"="$key" CODEX_HOME="$home" command codex exec --dangerously-bypass-approvals-and-sandbox -c "model=$model" -c "model_provider=$provider" "$@"
+    else
+        env "$env_name"="$key" CODEX_HOME="$home" codex "$@"
+    fi
+}
 cdx()  { codex "$@"; }
-cdkm() { cckm "$@"; }
-cdds() { ccds "$@"; }
+cdds() { _codex_backend deepseek 'deepseek-v4-pro' 'https://api.deepseek.com/v1' DEEPSEEK_API_KEY deepseek DEEPSEEK_API_KEY DEEPSEEK_API_KEY "$@"; }
+cdkm() { _codex_backend kimi 'k3' 'https://api.kimi.com/coding/v1' KIMI_API_KEY kimi KIMI_CODE_API_KEY KIMI_API_KEY "$@"; }
 
 # ---- TRAE CLI 启动模式（traecli/traex，仅 mac/linux）----
 # traex/traecli 装在 ~/.local/bin，ccr/node 装在 ~/.local/bin/node/bin，确保都在 PATH 上

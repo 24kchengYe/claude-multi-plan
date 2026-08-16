@@ -1,4 +1,4 @@
-# claude-switch.ps1 — Claude Code 多套餐切换（PowerShell 版）
+﻿# claude-switch.ps1 — Claude Code 多套餐切换（PowerShell 版）
 # 适用 Windows PowerShell 5.1 和 PowerShell 7+
 # 在你的 $PROFILE 里加一行引用它，例如：
 #   . "$HOME\.claude\skills\claude-multi-plan\claude-switch.ps1"
@@ -135,7 +135,69 @@ function ccds { if (_UseDeepSeek) { claude --dangerously-skip-permissions @args 
 # DeepSeek 套餐 + 普通
 function ccdeepseek { if (_UseDeepSeek) { claude @args } }
 
-# ---- cd* 全权限别名族（cd = dangerously 的明确标记；cd 本身被 shell 占用，Codex 用 cdx）----
+# ---- cd* = Codex CLI × 后端矩阵（全权限）----
+# cdx  = Codex × 当前 cc-switch 槽位
+# cdds = Codex × DeepSeek（deepseek-v4-pro，self key；隔离 CODEX_HOME=~/.codex-deepseek，不动 cc-switch 登录态）
+# cdkm = Codex × Kimi（k3，KIMI_CODE_API_KEY；隔离 CODEX_HOME=~/.codex-kimi）
+# key 均从 ai-api-gateway 解锁文件读取
+
+function _ReadStoreField {
+    param([string]$Field)
+    $store = $env:AI_GATEWAY_SECRETS_PATH
+    if ([string]::IsNullOrEmpty($store)) { $store = 'D:\server-ops\secrets\ai-gateway-secrets.env' }
+    if (Test-Path -LiteralPath $store) {
+        $m = Get-Content -LiteralPath $store | Where-Object { $_ -match ('^' + [regex]::Escape($Field) + '=(.+)$') } | Select-Object -Last 1
+        if ($m) { return ($m -split '=',2)[1].Trim() }
+    }
+    return $null
+}
+
+function _CodexBackendHome {
+    param([string]$Name, [string]$Model, [string]$BaseUrl, [string]$EnvKey, [string]$Provider)
+    $codexHome = Join-Path $env:USERPROFILE ('.codex-' + $Name)
+    New-Item -ItemType Directory -Force $codexHome | Out-Null
+    $cfg = @"
+model = "$Model"
+model_provider = "$Provider"
+
+[model_providers.$Provider]
+name = "$Provider"
+base_url = "$BaseUrl"
+env_key = "$EnvKey"
+wire_api = "responses"
+"@
+    Set-Content -LiteralPath (Join-Path $codexHome 'config.toml') -Value $cfg -Encoding ascii
+    return $codexHome
+}
+
+function _RunCodexBackend {
+    param([string]$HomeSuffix, [string]$Model, [string]$BaseUrl, [string]$EnvKey, [string]$Provider, [string]$StoreField)
+    $key = _ReadStoreField $StoreField
+    if (-not $key) {
+        Write-Host ("[claude-switch] 未找到 " + $StoreField + "（请先解锁 ai-api-gateway）") -ForegroundColor Yellow
+        return
+    }
+    $codexHome = _CodexBackendHome $HomeSuffix $Model $BaseUrl $EnvKey $Provider
+    $prevHome = $env:CODEX_HOME
+    $prevKey = [Environment]::GetEnvironmentVariable($EnvKey, 'Process')
+    try {
+        $env:CODEX_HOME = $codexHome
+        [Environment]::SetEnvironmentVariable($EnvKey, $key, 'Process')
+        $argList = @($args)
+        if ($argList.Count -gt 0 -and $argList[0] -eq 'exec') {
+            # exec 分支：-c 强制覆盖，防止当前目录的项目级 .codex/config.toml 盖掉后端配置
+            $rest = @()
+            if ($argList.Count -gt 1) { $rest = $argList[1..($argList.Count - 1)] }
+            & (_CodexBin) exec --dangerously-bypass-approvals-and-sandbox -c ("model=" + $Model) -c ("model_provider=" + $Provider) @rest
+        } else {
+            codex @args
+        }
+    } finally {
+        if ($null -eq $prevHome) { Remove-Item Env:CODEX_HOME -ErrorAction SilentlyContinue } else { $env:CODEX_HOME = $prevHome }
+        if ($null -eq $prevKey) { Remove-Item ("Env:" + $EnvKey) -ErrorAction SilentlyContinue } else { [Environment]::SetEnvironmentVariable($EnvKey, $prevKey, 'Process') }
+    }
+}
+
 function cdx  { codex @args }
-function cdkm { cckm @args }
-function cdds { ccds @args }
+function cdds { _RunCodexBackend 'deepseek' 'deepseek-v4-pro' 'https://api.deepseek.com/v1' 'DEEPSEEK_API_KEY' 'deepseek' 'DEEPSEEK_API_KEY' }
+function cdkm { _RunCodexBackend 'kimi' 'k3' 'https://api.kimi.com/coding/v1' 'KIMI_API_KEY' 'kimi' 'KIMI_CODE_API_KEY' }
