@@ -194,6 +194,11 @@ cp ~/.claude/skills/claude-multi-plan/claude-code-router.custom-router.aiden.js 
 - **跨平台 shell**：
   - macOS 默认 **zsh**，`install.sh` 会自动注入 `~/.zshrc`；脚本对 zsh/bash 定位自身目录的差异已做兼容。
   - Windows 三种环境（PowerShell 5.1 / 7 / Git Bash）+ WSL 都已覆盖。
+- **Codex 0.146+ 只认 `wire_api = "responses"`**：`chat` 已被移除，接入第三方 provider 的 config.toml 必须写 responses（DeepSeek/Kimi 的 `/responses` 端点均已实测可用）。
+- **Codex 项目级配置层叠**：Codex 会把 `<cwd>/.codex/config.toml` 当项目级配置覆盖用户配置（在家目录启动时主配置的 `model` 会劫持 `cdds`/`cdkm` 后端）。launcher 在 TUI 与 exec 两条路径都带 `-c model=... -c model_provider=...` 强制覆盖。
+- **Kimi 后端禁用 web_search**：Kimi 的 Responses 端点拒绝 `web_search` 工具（`tool type "web_search" is not supported`）。配置键是**顶层 `web_search = "disabled"`**（值 disabled/cached/indexed/live），不是 `[tools.web_search].enabled`；DeepSeek 不设限。
+- **Windows 首次运行沙箱提示**：隔离 CODEX_HOME（`~/.codex-deepseek` / `~/.codex-kimi`）首次启动会弹 "Set up the Codex agent sandbox"。launcher 已自动从主 CODEX_HOME 播种沙箱状态并写 `[windows] sandbox="elevated"` 跳过提示（cd* 恒以 bypass 运行，沙箱不实际使用）；手动遇到时选 2（non-admin）。
+- **macOS 解锁文件行尾**：secrets 文件混入 CRLF 会让提取的 key 带 `\r` → Codex 401。`_cms_field` 已 `tr -d '\r'` 防御；同步文件时保持 LF。
 
 ---
 
