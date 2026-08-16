@@ -1,6 +1,6 @@
 ---
 name: claude-multi-plan
-description: 在任意终端（PowerShell/Git Bash/WSL）用快捷命令在 Claude 官方套餐、Kimi 套餐与 DeepSeek 套餐之间切换运行 Claude Code，互不影响登录态；并提供字节内部链路快捷命令（ta/trae=TRAE CLI、ccta=Trae CN 网关、ccta-aiden/ccad=Aiden AIProxy）。当用户想配置多套餐切换、在不同设备复用同样配置、或问 cc/cckm/cckimi/ccds/ta/trae/ccta/ccta-aiden 之类命令时使用。
+description: 在任意终端（PowerShell/Git Bash/WSL）用快捷命令在 Claude 官方套餐、Kimi 套餐与 DeepSeek 套餐之间切换运行 Claude Code，互不影响登录态；提供 cd* 全权限别名族（cdx/cdkm/cdds）；并提供字节内部链路快捷命令（ta/trae=TRAE CLI、ccta=Trae CN 网关、ccta-aiden/ccad=Aiden AIProxy）。当用户想配置多套餐切换、在不同设备复用同样配置、或问 cc/cckm/cckimi/ccds/cdx/cdkm/cdds/ta/trae/ccta/ccta-aiden 之类命令时使用。
 ---
 
 # claude-multi-plan
@@ -19,6 +19,9 @@ description: 在任意终端（PowerShell/Git Bash/WSL）用快捷命令在 Clau
 | `cckimi` | Kimi 套餐 | 普通确认 |
 | `ccds` | DeepSeek 套餐 | 允许所有操作 |
 | `ccdeepseek` | DeepSeek 套餐 | 普通确认 |
+| `cdx` | Codex CLI | 全权限别名（= `codex`） |
+| `cdkm` | Kimi 套餐 | 全权限别名（= `cckm`） |
+| `cdds` | DeepSeek 套餐 | 全权限别名（= `ccds`） |
 | `ta` | TRAE CLI | 允许所有操作（--permission-mode bypass_permissions） |
 | `trae` | TRAE CLI | 普通模式（默认 Agent 模式，按需审批） |
 | `ccta` | Claude Code × Trae CN 网关 | 允许所有操作；cc 跑在 Trae CN 内部模型上（经 CCR 反代） |
@@ -27,6 +30,7 @@ description: 在任意终端（PowerShell/Git Bash/WSL）用快捷命令在 Clau
 > `ta` / `trae` 是字节内部 **TRAE CLI**（`traecli`/`traex`，基于 codex 二开）的启动快捷命令，仅 mac/linux。
 > 前置：已 `curl ... install_all_platforms.sh | sh` 装好并 `traecli` 登录。
 > `ta` 用官方 `bypass_permissions` 预设（可编辑工作区外文件 + 联网 + 不审批），而非文档不推荐的 `-y`（完全关沙箱）。
+> `cd*` 别名族 = 全权限（dangerously）的明确标记：`cdx`=`codex`、`cdkm`=`cckm`、`cdds`=`ccds`。`cd` 本身是 shell 换目录命令，不能占用。
 
 ---
 

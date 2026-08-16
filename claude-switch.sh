@@ -109,6 +109,12 @@ ccds() { _use_deepseek && claude --dangerously-skip-permissions "$@"; }
 # DeepSeek 套餐 + 普通
 ccdeepseek() { _use_deepseek && claude "$@"; }
 
+# ---- cd* 全权限别名族（cd = dangerously 的明确标记；cd 本身被 shell 占用，Codex 用 cdx）----
+unalias cdx cdkm cdds 2>/dev/null || true
+cdx()  { codex "$@"; }
+cdkm() { cckm "$@"; }
+cdds() { ccds "$@"; }
+
 # ---- TRAE CLI 启动模式（traecli/traex，仅 mac/linux）----
 # traex/traecli 装在 ~/.local/bin，ccr/node 装在 ~/.local/bin/node/bin，确保都在 PATH 上
 for __d in "$HOME/.local/bin" "$HOME/.local/bin/node/bin"; do

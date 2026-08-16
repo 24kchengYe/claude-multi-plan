@@ -111,3 +111,8 @@ function cckimi { if (_UseKimi) { claude @args } }
 function ccds { if (_UseDeepSeek) { claude --dangerously-skip-permissions @args } }
 # DeepSeek 套餐 + 普通
 function ccdeepseek { if (_UseDeepSeek) { claude @args } }
+
+# ---- cd* 全权限别名族（cd = dangerously 的明确标记；cd 本身被 shell 占用，Codex 用 cdx）----
+function cdx  { codex @args }
+function cdkm { cckm @args }
+function cdds { ccds @args }
