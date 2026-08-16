@@ -172,7 +172,11 @@ EOF
             env "$env_name"="$key" CODEX_HOME="$home" command codex exec --dangerously-bypass-approvals-and-sandbox -c "model=$model" -c "model_provider=$provider" "$@"
         fi
     else
-        env "$env_name"="$key" CODEX_HOME="$home" codex "$@"
+        if [ -n "$web_mode" ]; then
+            env "$env_name"="$key" CODEX_HOME="$home" command codex --dangerously-bypass-approvals-and-sandbox -c "model=$model" -c "model_provider=$provider" -c "web_search=$web_mode" "$@"
+        else
+            env "$env_name"="$key" CODEX_HOME="$home" command codex --dangerously-bypass-approvals-and-sandbox -c "model=$model" -c "model_provider=$provider" "$@"
+        fi
     fi
 }
 cdx()  { codex "$@"; }

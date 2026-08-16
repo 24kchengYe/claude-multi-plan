@@ -196,7 +196,9 @@ function _RunCodexBackend {
             if ($WebMode) { $extraC = @('-c', ('web_search=' + $WebMode)) }
             & (_CodexBin) exec --dangerously-bypass-approvals-and-sandbox -c ("model=" + $Model) -c ("model_provider=" + $Provider) @extraC @rest
         } else {
-            codex @args
+            $extraC = @()
+            if ($WebMode) { $extraC = @('-c', ('web_search=' + $WebMode)) }
+            & (_CodexBin) --dangerously-bypass-approvals-and-sandbox -c ("model=" + $Model) -c ("model_provider=" + $Provider) @extraC @args
         }
     } finally {
         if ($null -eq $prevHome) { Remove-Item Env:CODEX_HOME -ErrorAction SilentlyContinue } else { $env:CODEX_HOME = $prevHome }
