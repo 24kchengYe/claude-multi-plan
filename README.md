@@ -1,4 +1,12 @@
-# claude-multi-plan
+# claude-multi-plan（已归档 / ARCHIVED）
+
+> ⚠️ **2026-08-17 起本仓库与同名技能已归档**：全部能力（快捷命令族、启动器脚本、CCR/TRAE/Aiden 配置、Key 契约）已彻底并入 [24kchengYe/ai-api-gateway](https://github.com/24kchengYe/ai-api-gateway)——
+> - 权威文档：`references/clients/claude-multi-plan.md`
+> - 启动器实现：`scripts/claude-multi-plan/`
+>
+> 请只在 ai-api-gateway 一个技能内维护与使用。本仓库仅作历史留档，不再更新。
+
+---
 
 > 在任意终端（PowerShell / Git Bash / WSL）用一组快捷命令，在 **Claude 官方套餐** 与 **Kimi 套餐** 之间切换运行 Claude Code。不同窗口可同时各用一个套餐，互不冲突，也不影响官方登录态。
 
