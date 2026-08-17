@@ -1,4 +1,4 @@
-﻿# claude-switch.ps1 — Claude Code 多套餐切换（PowerShell 版）
+# claude-switch.ps1 — Claude Code 多套餐切换（PowerShell 版）
 # 适用 Windows PowerShell 5.1 和 PowerShell 7+
 # 在你的 $PROFILE 里加一行引用它，例如：
 #   . "$HOME\.claude\skills\claude-multi-plan\claude-switch.ps1"
@@ -23,7 +23,7 @@ $KimiKey           = ""   # 由 claude-switch.local.ps1 覆盖
 # ---- DeepSeek 套餐配置 ----
 # DeepSeek 官方 Anthropic 兼容端点（无需协议转换，直连即可）
 $DeepSeekBaseUrl   = "https://api.deepseek.com/anthropic"
-$DeepSeekModel     = "deepseek-v4-pro"   # 默认主力：V4 Pro（思考型旗舰）
+$DeepSeekModel     = "deepseek-v4-pro[1m]"   # 默认主力：V4 Pro（思考型旗舰）；[1m] 后缀开启 1M 上下文档位（不带后缀端点按 200k 服务）
 $DeepSeekFastModel = "deepseek-chat"     # 小任务/后台：V4 Flash（快、便宜）
 $DeepSeekKey       = ""   # 由 claude-switch.local.ps1 覆盖
 

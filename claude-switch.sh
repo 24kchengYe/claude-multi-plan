@@ -26,7 +26,7 @@ KIMI_KEY=""   # 由 claude-switch.local.sh 覆盖
 # ---- DeepSeek 套餐配置 ----
 # DeepSeek 官方 Anthropic 兼容端点（无需协议转换，直连即可）
 DEEPSEEK_BASE_URL="https://api.deepseek.com/anthropic"
-DEEPSEEK_MODEL="deepseek-v4-pro"   # 默认主力：V4 Pro（思考型旗舰）
+DEEPSEEK_MODEL="deepseek-v4-pro[1m]"   # 默认主力：V4 Pro（思考型旗舰）；[1m] 后缀开启 1M 上下文档位（不带后缀端点按 200k 服务）
 DEEPSEEK_FAST_MODEL="deepseek-chat"   # 小任务/后台：V4 Flash（快、便宜）
 DEEPSEEK_KEY=""   # 由 claude-switch.local.sh 覆盖
 
