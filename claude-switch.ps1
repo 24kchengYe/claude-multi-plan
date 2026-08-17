@@ -1,4 +1,4 @@
-# claude-switch.ps1 — Claude Code 多套餐切换（PowerShell 版）
+﻿# claude-switch.ps1 — Claude Code 多套餐切换（PowerShell 版）
 # 适用 Windows PowerShell 5.1 和 PowerShell 7+
 # 在你的 $PROFILE 里加一行引用它，例如：
 #   . "$HOME\.claude\skills\claude-multi-plan\claude-switch.ps1"
